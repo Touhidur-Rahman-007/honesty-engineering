@@ -33,7 +33,7 @@ export function Products() {
         : products.filter(p => p.category === activeCategory);
 
     return (
-        <section id="products" className="relative py-10 sm:py-14 bg-white overflow-hidden">
+        <section id="products" className="relative py-8 sm:py-12 bg-white overflow-hidden">
             {/* Decorative elements */}
             <CircuitCorner position="top-right" />
             <CircuitCorner position="bottom-left" />

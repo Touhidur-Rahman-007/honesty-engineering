@@ -68,7 +68,7 @@ export function SectionTitle({
     return (
         <div
             ref={ref}
-            className={cn("relative mb-12", alignStyles[align], className)}
+            className={cn("relative mb-8", alignStyles[align], className)}
         >
             {/* Decorative badge above title */}
             {subtitle && (
@@ -77,7 +77,7 @@ export function SectionTitle({
                     animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                     transition={{ duration: 0.5 }}
                     className={cn(
-                        "inline-block mb-4",
+                        "inline-block mb-3",
                         align === "center" && "mx-auto"
                     )}
                 >
@@ -109,7 +109,7 @@ export function SectionTitle({
                     animate={isInView ? { scaleX: 1 } : { scaleX: 0 }}
                     transition={{ duration: 0.8, delay: 0.3 }}
                     className={cn(
-                        "mt-6 h-1 bg-gradient-to-r from-primary-400 via-secondary-400 to-primary-400 rounded-full",
+                        "mt-4 h-1 bg-gradient-to-r from-primary-400 via-secondary-400 to-primary-400 rounded-full",
                         align === "center" && "mx-auto w-24",
                         align === "left" && "w-24",
                         align === "right" && "ml-auto w-24"
@@ -138,7 +138,7 @@ export function AreaTitle({ area, interest, className }: AreaTitleProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
             transition={{ duration: 0.5 }}
-            className={cn("inline-flex items-center gap-3 mb-6", className)}
+            className={cn("inline-flex items-center gap-3 mb-4", className)}
         >
             <span
                 className="text-2xl md:text-3xl italic text-secondary-600"

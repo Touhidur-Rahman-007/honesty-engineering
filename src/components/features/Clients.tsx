@@ -36,7 +36,7 @@ export function Clients() {
     const isInView = useInView(ref, { once: true, amount: 0.2 });
 
     return (
-        <section id="clients" className="relative py-10 sm:py-14 bg-gradient-to-b from-primary-50 to-white overflow-hidden">
+        <section id="clients" className="relative py-8 sm:py-12 bg-gradient-to-b from-primary-50 to-white overflow-hidden">
             {/* Decorative elements */}
             <CircuitCorner position="top-left" />
             <CircuitCorner position="bottom-right" />

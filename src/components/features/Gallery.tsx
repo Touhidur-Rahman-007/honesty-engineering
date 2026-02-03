@@ -28,7 +28,7 @@ export function Gallery() {
         : galleryImages.filter(img => img.category === activeCategory);
 
     return (
-        <section id="gallery" className="relative py-10 sm:py-14 bg-gradient-to-b from-white to-primary-50 overflow-hidden">
+        <section id="gallery" className="relative py-8 sm:py-12 bg-gradient-to-b from-white to-primary-50 overflow-hidden">
             {/* Decorative elements - hidden on mobile for performance */}
             <div className="hidden sm:block">
                 <CircuitCorner position="top-left" />

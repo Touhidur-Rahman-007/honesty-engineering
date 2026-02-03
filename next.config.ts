@@ -15,9 +15,6 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
 
-  // React compiler for better performance
-  reactCompiler: true,
-
   // Disable type checking during build (run separately)
   typescript: {
     ignoreBuildErrors: false,
@@ -29,10 +26,7 @@ const nextConfig: NextConfig = {
   // Generate source maps for debugging (disable in production if needed)
   productionBrowserSourceMaps: false,
 
-  // Optimize package imports
-  experimental: {
-    optimizePackageImports: ['framer-motion', 'lucide-react'],
-  },
+  // Keep config stable for shared hosting builds
 };
 
 export default nextConfig;

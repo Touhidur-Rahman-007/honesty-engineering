@@ -55,7 +55,7 @@ export function Contact() {
     };
 
     return (
-        <section id="contact" className="relative py-10 sm:py-14 bg-white overflow-hidden">
+        <section id="contact" className="relative py-8 sm:py-12 bg-white overflow-hidden">
             {/* Decorative elements - hidden on mobile */}
             <div className="hidden sm:block">
                 <CircuitCorner position="top-right" />

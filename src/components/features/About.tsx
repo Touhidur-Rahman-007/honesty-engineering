@@ -13,7 +13,7 @@ import {
 
 export function About() {
     return (
-        <section id="about" className="relative py-10 sm:py-14 bg-white overflow-hidden">
+        <section id="about" className="relative py-8 sm:py-12 bg-white overflow-hidden">
             {/* Decorative elements - hidden on mobile */}
             <div className="hidden sm:block">
                 <CircuitCorner position="bottom-right" />

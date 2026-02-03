@@ -11,7 +11,7 @@ export function CEOMessage() {
     const isInView = useInView(ref, { once: true, amount: 0.3 });
 
     return (
-        <section className="relative py-12 sm:py-16 bg-gradient-to-b from-white to-primary-50 overflow-hidden">
+        <section className="relative py-10 sm:py-14 bg-gradient-to-b from-white to-primary-50 overflow-hidden">
             {/* Decorative elements */}
             <CircuitCorner position="top-right" />
             <CircuitCorner position="bottom-left" />

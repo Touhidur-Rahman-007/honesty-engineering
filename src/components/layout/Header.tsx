@@ -94,17 +94,15 @@ function ServicesDropdown({ isScrolled, onClose }: { isScrolled: boolean; onClos
     const handleServiceClick = (e: React.MouseEvent, href: string) => {
         e.preventDefault();
         onClose();
-        
         // Extract the hash from href
-        const hash = href.split('#')[1];
-        
-        if (pathname === '/services') {
-            // Already on services page - dispatch custom event and update hash
-            window.location.hash = hash;
-            // Dispatch event to trigger the services page to update
-            window.dispatchEvent(new CustomEvent('serviceHashChange', { detail: { hash } }));
+        const hash = href.split("#")[1];
+        if (pathname?.startsWith("/services")) {
+            if (typeof window !== "undefined") {
+                window.location.hash = hash;
+                window.dispatchEvent(new CustomEvent("serviceHashChange", { detail: { hash } }));
+                (window as { __setActiveService?: (key: string) => void }).__setActiveService?.(hash);
+            }
         } else {
-            // Navigate to services page with hash
             router.push(href);
         }
     };
@@ -194,8 +192,8 @@ function ServicesDropdown({ isScrolled, onClose }: { isScrolled: boolean; onClos
 // Logo Component with actual logo image
 function Logo({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
     const sizeStyles = {
-        sm: { container: "w-10 h-10", text: "text-sm" },
-        md: { container: "w-14 h-14", text: "text-lg" },
+        sm: { container: "w-10 h-10", text: "text-base" },
+        md: { container: "w-14 h-14", text: "text-xl sm:text-2xl" },
         lg: { container: "w-20 h-20", text: "text-2xl" },
     };
 
@@ -428,6 +426,25 @@ export function Header() {
     const { scrollY } = useScroll();
     const pathname = usePathname();
     const router = useRouter();
+    const isServicesPage = pathname?.startsWith("/services");
+    const navigateToService = (href: string) => {
+        const hash = href.split("#")[1];
+        if (!hash) {
+            router.push("/services");
+            return;
+        }
+
+        if (isServicesPage) {
+            if (typeof window !== "undefined") {
+                window.location.hash = hash;
+                window.dispatchEvent(new CustomEvent("serviceHashChange", { detail: { hash } }));
+                (window as { __setActiveService?: (key: string) => void }).__setActiveService?.(hash);
+            }
+            return;
+        }
+
+        router.push(href);
+    };
     
     // Check if we're on homepage or other pages
     const isHomePage = pathname === "/";
@@ -441,13 +458,16 @@ export function Header() {
     // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
+            if (isMobileMenuOpen) {
+                return;
+            }
             if (servicesDropdownRef.current && !servicesDropdownRef.current.contains(event.target as Node)) {
                 setIsServicesDropdownOpen(false);
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
+    }, [isMobileMenuOpen]);
 
     // Close mobile menu on resize
     useEffect(() => {
@@ -502,19 +522,7 @@ export function Header() {
         e.preventDefault();
         setIsServicesDropdownOpen(false);
         setIsMobileMenuOpen(false);
-        
-        // Extract the hash from href
-        const hash = href.split('#')[1];
-        
-        if (pathname === '/services') {
-            // Already on services page - dispatch custom event and update hash
-            window.location.hash = hash;
-            // Dispatch event to trigger the services page to update
-            window.dispatchEvent(new CustomEvent('serviceHashChange', { detail: { hash } }));
-        } else {
-            // Navigate to services page with hash
-            router.push(href);
-        }
+        navigateToService(href);
     };
 
     return (
@@ -557,7 +565,7 @@ export function Header() {
                                         <>
                                             <GlassButton
                                                 isScrolled={showScrolledStyle}
-                                                onClick={() => setIsServicesDropdownOpen(!isServicesDropdownOpen)}
+                                                onClick={() => setIsServicesDropdownOpen((prev) => !prev)}
                                             >
                                                 {item.label}
                                                 <motion.svg 
@@ -706,7 +714,7 @@ export function Header() {
                                 <div className="flex flex-col items-center">
                                     <button
                                         type="button"
-                                        onClick={() => setIsServicesDropdownOpen(!isServicesDropdownOpen)}
+                                        onClick={() => setIsServicesDropdownOpen((prev) => !prev)}
                                         className="text-lg font-bold text-primary-800 hover:text-primary-500 transition-all duration-300 px-6 py-3 rounded-2xl bg-white/40 backdrop-blur-xl border border-white/30 shadow-[0_4px_30px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.15)] w-full text-center flex items-center justify-center gap-2"
                                         style={{
                                             WebkitBackdropFilter: "blur(20px)",

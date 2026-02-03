@@ -112,6 +112,12 @@ const servicesData = {
 
 type ServiceKey = keyof typeof servicesData;
 
+declare global {
+    interface Window {
+        __setActiveService?: (key: ServiceKey) => void;
+    }
+}
+
 export default function ServicesPage() {
     const [activeService, setActiveService] = useState<ServiceKey>("electrical");
     const ref = useRef(null);
@@ -120,28 +126,31 @@ export default function ServicesPage() {
 
     // Handle hash navigation - when page loads with a hash like #software, select that service
     useEffect(() => {
-        const handleHashChange = () => {
-            const hash = window.location.hash.replace("#", "");
+        const setFromHash = (hash?: string) => {
             if (hash && hash in servicesData) {
                 setActiveService(hash as ServiceKey);
                 // Scroll to service detail section after a brief delay
-                setTimeout(() => {
-                    serviceDetailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }, 100);
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        serviceDetailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    });
+                });
             }
         };
 
-        // Handle custom event from header navigation (when already on services page)
-        const handleCustomHashChange = (e: CustomEvent<{ hash: string }>) => {
-            const hash = e.detail.hash;
-            if (hash && hash in servicesData) {
-                setActiveService(hash as ServiceKey);
-                // Scroll to service detail section after a brief delay
-                setTimeout(() => {
-                    serviceDetailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }, 100);
-            }
+        const handleHashChange = () => {
+            const hash = window.location.hash.replace("#", "");
+            setFromHash(hash);
         };
+
+        // Handle custom event from header navigation (when already on services page)
+        const handleCustomHashChange = (e: Event) => {
+            const hash = (e as CustomEvent<{ hash: string }>).detail?.hash;
+            setFromHash(hash);
+        };
+
+        // Expose global setter for header fallback
+        window.__setActiveService = (key: ServiceKey) => setFromHash(key);
 
         // Check hash on initial load
         handleHashChange();
@@ -149,11 +158,12 @@ export default function ServicesPage() {
         // Listen for hash changes (in case user navigates via browser)
         window.addEventListener("hashchange", handleHashChange);
         // Listen for custom event from header navigation
-        window.addEventListener("serviceHashChange", handleCustomHashChange as EventListener);
+        window.addEventListener("serviceHashChange", handleCustomHashChange);
         
         return () => {
             window.removeEventListener("hashchange", handleHashChange);
-            window.removeEventListener("serviceHashChange", handleCustomHashChange as EventListener);
+            window.removeEventListener("serviceHashChange", handleCustomHashChange);
+            delete window.__setActiveService;
         };
     }, []);
 
@@ -265,33 +275,6 @@ export default function ServicesPage() {
                     </div>
                 </motion.div>
 
-                {/* All Services Grid */}
-                <AnimatedSection delay={0.3} className="mt-10">
-                    <h3 className="text-lg sm:text-xl font-bold text-center text-primary-800 mb-6">All Our Services</h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
-                        {Object.entries(servicesData).map(([key, service], index) => (
-                            <motion.div
-                                key={key}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ duration: 0.3, delay: index * 0.05 }}
-                                whileHover={{ y: -5 }}
-                                onClick={() => setActiveService(key as ServiceKey)}
-                                className={cn(
-                                    "p-4 rounded-xl bg-white border cursor-pointer transition-all",
-                                    activeService === key
-                                        ? "border-primary-400 shadow-lg"
-                                        : "border-primary-100 hover:border-primary-300"
-                                )}
-                            >
-                                <div className="text-2xl mb-2">{service.icon}</div>
-                                <div className="font-semibold text-primary-800 text-sm">{service.title}</div>
-                                <div className="text-xs text-primary-500 mt-1">{service.items.length} services</div>
-                            </motion.div>
-                        ))}
-                    </div>
-                </AnimatedSection>
             </div>
         </main>
     );

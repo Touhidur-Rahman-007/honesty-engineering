@@ -122,7 +122,7 @@ export function Services() {
     const isInView = useInView(ref, { once: true, amount: 0.1 });
 
     return (
-        <section id="services" className="relative py-10 sm:py-14 bg-gradient-to-b from-primary-50 to-white overflow-hidden">
+        <section id="services" className="relative py-8 sm:py-12 bg-gradient-to-b from-primary-50 to-white overflow-hidden">
             {/* Decorative elements - hidden on mobile for performance */}
             <div className="hidden sm:block">
                 <CircuitCorner position="top-left" />

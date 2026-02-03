@@ -39,7 +39,7 @@ export function SuccessStories() {
     const isInView = useInView(ref, { once: true, amount: 0.2 });
 
     return (
-        <section id="projects" className="relative py-10 sm:py-14 bg-white overflow-hidden">
+        <section id="projects" className="relative py-8 sm:py-12 bg-white overflow-hidden">
             {/* Decorative elements */}
             <CircuitCorner position="top-right" />
             <CircuitCorner position="bottom-left" />
