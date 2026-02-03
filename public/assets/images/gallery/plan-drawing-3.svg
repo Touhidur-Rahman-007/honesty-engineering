@@ -1,0 +1,204 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 550" width="900" height="550">
+  <defs>
+    <linearGradient id="bgGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8fdf5"/>
+      <stop offset="50%" style="stop-color:#e8f5e9"/>
+      <stop offset="100%" style="stop-color:#f1f8e9"/>
+    </linearGradient>
+    <linearGradient id="greenMain3" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#33691e"/>
+      <stop offset="50%" style="stop-color:#558b2f"/>
+      <stop offset="100%" style="stop-color:#33691e"/>
+    </linearGradient>
+    <linearGradient id="blueArch" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#01579b"/>
+      <stop offset="100%" style="stop-color:#0288d1"/>
+    </linearGradient>
+    <filter id="shadow3" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-color="#33691e" flood-opacity="0.25"/>
+    </filter>
+    <pattern id="gridArch" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#7cb342" stroke-width="0.5" opacity="0.25"/>
+    </pattern>
+    <pattern id="hatchGreen3" width="6" height="6" patternUnits="userSpaceOnUse">
+      <path d="M0,0 l6,6 M6,0 l-6,6" stroke="#7cb342" stroke-width="0.4" opacity="0.3"/>
+    </pattern>
+    <pattern id="hatchBlue" width="6" height="6" patternUnits="userSpaceOnUse">
+      <path d="M0,0 l6,6 M6,0 l-6,6" stroke="#0288d1" stroke-width="0.4" opacity="0.25"/>
+    </pattern>
+  </defs>
+  
+  <rect width="100%" height="100%" fill="url(#bgGrad3)"/>
+  <rect width="100%" height="100%" fill="url(#gridArch)"/>
+  
+  <rect x="15" y="15" width="870" height="520" fill="none" stroke="url(#greenMain3)" stroke-width="3" filter="url(#shadow3)" rx="5"/>
+  <rect x="22" y="22" width="856" height="506" fill="none" stroke="#7cb342" stroke-width="1" opacity="0.5" rx="3"/>
+  
+  <rect x="595" y="445" width="270" height="80" fill="#ffffff" stroke="#01579b" stroke-width="2" filter="url(#shadow3)"/>
+  <rect x="595" y="445" width="270" height="25" fill="url(#blueArch)"/>
+  <line x1="595" y1="495" x2="865" y2="495" stroke="#0288d1" stroke-width="0.5"/>
+  <text x="730" y="462" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" font-weight="bold">MULTI-STORY BUILDING PLAN</text>
+  <text x="730" y="485" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#33691e" font-weight="bold">HONESTY ENGINEERING CONSULTANCY</text>
+  <text x="640" y="510" font-family="Arial, sans-serif" font-size="8" fill="#01579b">SCALE: 1:250</text>
+  <text x="780" y="510" font-family="Arial, sans-serif" font-size="8" fill="#01579b">DWG: HE-ARCH-003</text>
+  
+  <g transform="translate(40, 38)">
+    <rect x="0" y="0" width="540" height="400" fill="#ffffff" stroke="url(#greenMain3)" stroke-width="2.5" filter="url(#shadow3)" rx="3"/>
+    
+    <rect x="10" y="10" width="265" height="185" fill="url(#hatchGreen3)" stroke="#33691e" stroke-width="2"/>
+    <text x="142" y="50" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" fill="#33691e" font-weight="bold">MAIN HALL</text>
+    <text x="142" y="70" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#558b2f">26.0m × 18.0m = 468 m²</text>
+    <text x="142" y="86" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#01579b">CEILING HEIGHT: 6.0m</text>
+    <circle cx="75" cy="120" r="16" fill="#e8f5e9" stroke="#7cb342" stroke-width="1.5" stroke-dasharray="4,2"/>
+    <text x="75" y="124" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#558b2f">COL</text>
+    <circle cx="142" cy="120" r="16" fill="#e8f5e9" stroke="#7cb342" stroke-width="1.5" stroke-dasharray="4,2"/>
+    <text x="142" y="124" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#558b2f">COL</text>
+    <circle cx="210" cy="120" r="16" fill="#e8f5e9" stroke="#7cb342" stroke-width="1.5" stroke-dasharray="4,2"/>
+    <text x="210" y="124" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#558b2f">COL</text>
+    <rect x="45" y="155" width="48" height="28" fill="#f1f8e9" stroke="#7cb342" stroke-width="1"/>
+    <rect x="105" y="155" width="48" height="28" fill="#f1f8e9" stroke="#7cb342" stroke-width="1"/>
+    <rect x="165" y="155" width="48" height="28" fill="#f1f8e9" stroke="#7cb342" stroke-width="1"/>
+    <rect x="225" y="155" width="38" height="28" fill="#f1f8e9" stroke="#7cb342" stroke-width="1"/>
+    
+    <rect x="285" y="10" width="130" height="88" fill="#f8fdf5" stroke="#33691e" stroke-width="1.5"/>
+    <text x="350" y="45" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#33691e" font-weight="bold">RECEPTION</text>
+    <text x="350" y="62" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#558b2f">13.0m × 8.5m</text>
+    <ellipse cx="350" cy="78" rx="32" ry="12" fill="#e8f5e9" stroke="#9e9e9e" stroke-width="1"/>
+    
+    <rect x="425" y="10" width="105" height="88" fill="url(#hatchBlue)" stroke="#01579b" stroke-width="2"/>
+    <text x="477" y="40" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#01579b" font-weight="bold">LOBBY</text>
+    <text x="477" y="57" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#0288d1">11.0m × 8.5m</text>
+    <text x="477" y="72" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" fill="#33691e">DOUBLE HEIGHT</text>
+    
+    <rect x="285" y="108" width="100" height="87" fill="#f8fdf5" stroke="#33691e" stroke-width="1.5"/>
+    <text x="335" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#33691e" font-weight="bold">OFFICE A</text>
+    <text x="335" y="162" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#558b2f">10.0m × 8.5m</text>
+    <rect x="300" y="118" width="18" height="18" fill="#e8f5e9" stroke="#7cb342" stroke-width="0.8"/>
+    <rect x="330" y="118" width="18" height="18" fill="#e8f5e9" stroke="#7cb342" stroke-width="0.8"/>
+    <rect x="360" y="118" width="18" height="18" fill="#e8f5e9" stroke="#7cb342" stroke-width="0.8"/>
+    
+    <rect x="395" y="108" width="70" height="87" fill="#f8fdf5" stroke="#33691e" stroke-width="1.5"/>
+    <text x="430" y="150" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#33691e" font-weight="bold">OFFICE B</text>
+    <text x="430" y="167" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#558b2f">7.0m × 8.5m</text>
+    
+    <rect x="475" y="108" width="55" height="47" fill="#ffcdd2" stroke="#c62828" stroke-width="2"/>
+    <text x="502" y="135" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#c62828" font-weight="bold">STAIR A</text>
+    <line x1="485" y1="142" x2="520" y2="142" stroke="#c62828" stroke-width="0.8"/>
+    <line x1="485" y1="147" x2="520" y2="147" stroke="#c62828" stroke-width="0.8"/>
+    <line x1="485" y1="152" x2="520" y2="152" stroke="#c62828" stroke-width="0.8"/>
+    
+    <rect x="475" y="165" width="55" height="30" fill="#e3f2fd" stroke="#0277bd" stroke-width="1.5"/>
+    <text x="502" y="184" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#0277bd" font-weight="bold">ELEVATOR</text>
+    
+    <rect x="10" y="205" width="175" height="100" fill="#f8fdf5" stroke="#33691e" stroke-width="1.5"/>
+    <text x="97" y="248" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#33691e" font-weight="bold">CONFERENCE</text>
+    <text x="97" y="268" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#558b2f">17.0m × 10.0m</text>
+    <ellipse cx="97" cy="285" rx="55" ry="15" fill="#e8f5e9" stroke="#9e9e9e" stroke-width="1"/>
+    
+    <rect x="195" y="205" width="80" height="100" fill="#fff9c4" stroke="#33691e" stroke-width="1.5"/>
+    <text x="235" y="250" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#33691e" font-weight="bold">PANTRY</text>
+    <text x="235" y="267" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#558b2f">8.0m × 10.0m</text>
+    <rect x="210" y="280" width="22" height="15" fill="#e8f5e9" stroke="#7cb342" stroke-width="0.8"/>
+    <rect x="240" y="280" width="22" height="15" fill="#e8f5e9" stroke="#7cb342" stroke-width="0.8"/>
+    
+    <rect x="285" y="205" width="100" height="50" fill="#e3f2fd" stroke="#0277bd" stroke-width="1.2"/>
+    <text x="335" y="235" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#0277bd">M</text>
+    
+    <rect x="395" y="205" width="70" height="50" fill="#fce4ec" stroke="#0277bd" stroke-width="1.2"/>
+    <text x="430" y="235" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#0277bd">F</text>
+    
+    <rect x="475" y="205" width="55" height="50" fill="#ffcdd2" stroke="#c62828" stroke-width="2"/>
+    <text x="502" y="235" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#c62828" font-weight="bold">STAIR B</text>
+    
+    <rect x="285" y="265" width="100" height="40" fill="#f1f8e9" stroke="#33691e" stroke-width="1.2"/>
+    <text x="335" y="290" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#33691e">UTILITY</text>
+    
+    <rect x="395" y="265" width="135" height="40" fill="#f1f8e9" stroke="#33691e" stroke-width="1.2"/>
+    <text x="462" y="290" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#33691e">STORAGE</text>
+    
+    <rect x="10" y="315" width="265" height="75" fill="#c5e1a5" stroke="#558b2f" stroke-width="2"/>
+    <text x="142" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#33691e" font-weight="bold">PARKING LEVEL</text>
+    <text x="142" y="368" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#558b2f">26.0m × 7.5m = 195 m²</text>
+    <line x1="45" y1="375" x2="245" y2="375" stroke="#558b2f" stroke-width="0.8"/>
+    <text x="65" y="385" font-family="Arial, sans-serif" font-size="7" fill="#33691e">P1</text>
+    <text x="105" y="385" font-family="Arial, sans-serif" font-size="7" fill="#33691e">P2</text>
+    <text x="145" y="385" font-family="Arial, sans-serif" font-size="7" fill="#33691e">P3</text>
+    <text x="185" y="385" font-family="Arial, sans-serif" font-size="7" fill="#33691e">P4</text>
+    <text x="225" y="385" font-family="Arial, sans-serif" font-size="7" fill="#33691e">P5</text>
+    
+    <rect x="285" y="315" width="245" height="75" fill="#dcedc8" stroke="#33691e" stroke-width="1.5"/>
+    <text x="407" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#33691e" font-weight="bold">LOADING AREA</text>
+    <text x="407" y="368" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#558b2f">25.0m × 7.5m</text>
+    <rect x="325" y="360" width="42" height="25" fill="#ffffff" stroke="#7cb342" stroke-width="1"/>
+    <rect x="387" y="360" width="42" height="25" fill="#ffffff" stroke="#7cb342" stroke-width="1"/>
+    <rect x="449" y="360" width="42" height="25" fill="#ffffff" stroke="#7cb342" stroke-width="1"/>
+    
+    <g stroke="#33691e" stroke-width="2.5" fill="none">
+      <path d="M 125,390 L 125,400 A 18,18 0 0 1 143,390"/>
+      <path d="M 345,390 L 345,400 A 18,18 0 0 1 363,390"/>
+      <path d="M 465,390 L 465,400 A 18,18 0 0 1 483,390"/>
+    </g>
+    <g stroke="#558b2f" stroke-width="1.5" fill="none">
+      <path d="M 275,52 L 285,52 A 12,12 0 0 1 275,40"/>
+      <path d="M 275,148 L 285,148 A 12,12 0 0 1 275,136"/>
+    </g>
+  </g>
+  
+  <g stroke="#33691e" stroke-width="1" fill="#33691e" font-family="Arial, sans-serif" font-size="9">
+    <line x1="40" y1="455" x2="580" y2="455"/>
+    <line x1="40" y1="449" x2="40" y2="461"/>
+    <line x1="580" y1="449" x2="580" y2="461"/>
+    <text x="310" y="470" text-anchor="middle" font-weight="bold">54.0 m</text>
+    <line x1="598" y1="38" x2="598" y2="438"/>
+    <line x1="592" y1="38" x2="604" y2="38"/>
+    <line x1="592" y1="438" x2="604" y2="438"/>
+    <text x="612" y="242" transform="rotate(90, 612, 242)" text-anchor="middle" font-weight="bold">39.5 m</text>
+  </g>
+  
+  <g transform="translate(615, 55)">
+    <rect x="-5" y="-15" width="130" height="115" fill="#ffffff" stroke="#7cb342" stroke-width="1" rx="3"/>
+    <text x="0" y="0" font-family="Arial, sans-serif" font-size="11" fill="#33691e" font-weight="bold">LEGEND:</text>
+    <rect x="0" y="10" width="18" height="12" fill="url(#hatchGreen3)" stroke="#33691e" stroke-width="0.8"/>
+    <text x="24" y="20" font-family="Arial, sans-serif" font-size="9" fill="#33691e">Public Area</text>
+    <rect x="0" y="30" width="18" height="12" fill="url(#hatchBlue)" stroke="#01579b" stroke-width="0.8"/>
+    <text x="24" y="40" font-family="Arial, sans-serif" font-size="9" fill="#01579b">Transition Zone</text>
+    <rect x="0" y="50" width="18" height="12" fill="#ffcdd2" stroke="#c62828" stroke-width="0.8"/>
+    <text x="24" y="60" font-family="Arial, sans-serif" font-size="9" fill="#c62828">Vertical Circ.</text>
+    <circle cx="9" cy="78" r="6" fill="#e8f5e9" stroke="#7cb342" stroke-width="0.8"/>
+    <text x="24" y="82" font-family="Arial, sans-serif" font-size="9" fill="#7cb342">Column</text>
+    <ellipse cx="9" cy="95" rx="9" ry="5" fill="#e8f5e9" stroke="#9e9e9e" stroke-width="0.8"/>
+    <text x="24" y="99" font-family="Arial, sans-serif" font-size="9" fill="#757575">Furniture</text>
+  </g>
+  
+  <g transform="translate(615, 195)">
+    <rect x="-5" y="-15" width="130" height="130" fill="#ffffff" stroke="#7cb342" stroke-width="1" rx="3"/>
+    <text x="0" y="0" font-family="Arial, sans-serif" font-size="11" fill="#33691e" font-weight="bold">AREA SCHEDULE:</text>
+    <text x="0" y="18" font-family="Arial, sans-serif" font-size="9" fill="#616161">Main Hall: 468 m²</text>
+    <text x="0" y="33" font-family="Arial, sans-serif" font-size="9" fill="#616161">Offices: 165 m²</text>
+    <text x="0" y="48" font-family="Arial, sans-serif" font-size="9" fill="#616161">Conference: 170 m²</text>
+    <text x="0" y="63" font-family="Arial, sans-serif" font-size="9" fill="#616161">Services: 125 m²</text>
+    <text x="0" y="78" font-family="Arial, sans-serif" font-size="9" fill="#616161">Circulation: 210 m²</text>
+    <text x="0" y="93" font-family="Arial, sans-serif" font-size="9" fill="#616161">Parking: 195 m²</text>
+    <line x1="0" y1="100" x2="110" y2="100" stroke="#33691e" stroke-width="1"/>
+    <text x="0" y="115" font-family="Arial, sans-serif" font-size="10" fill="#33691e" font-weight="bold">GFA: 1,333 m²</text>
+  </g>
+  
+  <g transform="translate(830, 75)">
+    <circle cx="0" cy="0" r="28" fill="#ffffff" stroke="#01579b" stroke-width="2" filter="url(#shadow3)"/>
+    <polygon points="0,-22 -9,12 0,6 9,12" fill="url(#blueArch)"/>
+    <text x="0" y="-32" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#01579b" font-weight="bold">N</text>
+  </g>
+  
+  <g transform="translate(615, 350)">
+    <rect x="-5" y="-15" width="130" height="75" fill="#ffffff" stroke="#01579b" stroke-width="1" rx="3"/>
+    <text x="0" y="0" font-family="Arial, sans-serif" font-size="11" fill="#01579b" font-weight="bold">FLOOR KEY:</text>
+    <rect x="0" y="12" width="55" height="20" fill="#c5e1a5" stroke="#558b2f" stroke-width="1.5"/>
+    <text x="27" y="26" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#33691e" font-weight="bold">GROUND</text>
+    <rect x="65" y="12" width="50" height="20" fill="#f1f8e9" stroke="#7cb342" stroke-width="0.8"/>
+    <text x="90" y="26" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#616161">1ST</text>
+    <rect x="0" y="40" width="50" height="20" fill="#f1f8e9" stroke="#7cb342" stroke-width="0.8"/>
+    <text x="25" y="54" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#616161">2ND</text>
+    <rect x="58" y="40" width="50" height="20" fill="#f1f8e9" stroke="#7cb342" stroke-width="0.8"/>
+    <text x="83" y="54" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#616161">3RD</text>
+  </g>
+</svg>

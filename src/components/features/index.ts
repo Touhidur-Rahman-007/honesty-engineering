@@ -1,0 +1,11 @@
+export { Hero } from "./Hero";
+export { About } from "./About";
+export { CEOMessage } from "./CEOMessage";
+export { Turnkey } from "./Turnkey";
+export { Services } from "./Services";
+export { Products } from "./Products";
+export { Gallery } from "./Gallery";
+export { SuccessStories } from "./SuccessStories";
+export { Clients } from "./Clients";
+export { Contact } from "./Contact";
+export { Certification } from "./Certification";
