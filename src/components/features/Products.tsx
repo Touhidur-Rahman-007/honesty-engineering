@@ -57,7 +57,7 @@ export function Products() {
                             key={category}
                             onClick={() => setActiveCategory(category)}
                             className={cn(
-                                "px-3 py-1.5 sm:px-5 sm:py-2 rounded-full font-medium transition-all duration-300 text-sm sm:text-base",
+                                "px-3 py-1.5 sm:px-5 sm:py-2 rounded-full font-medium transition-all duration-300 text-sm sm:text-base cursor-pointer",
                                 activeCategory === category
                                     ? "bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg"
                                     : "bg-white text-primary-700 hover:bg-primary-100 border border-primary-200"
