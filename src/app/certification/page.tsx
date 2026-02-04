@@ -69,7 +69,7 @@ export default function CertificationPage() {
                                 <StaggerItem key={cert.label}>
                                     <motion.button
                                         onClick={() => openPdf(cert.pdfPath)}
-                                        className="w-full p-5 rounded-xl bg-white/10 backdrop-blur-sm text-white text-left hover:bg-white/20 transition-all"
+                                        className="w-full p-5 rounded-xl bg-white/10 backdrop-blur-sm text-white text-left hover:bg-white/20 transition-all cursor-pointer"
                                         whileHover={{ scale: 1.03, y: -5 }}
                                         whileTap={{ scale: 0.98 }}
                                     >
@@ -126,7 +126,7 @@ export default function CertificationPage() {
                                 </a>
                                 <button
                                     onClick={closePdf}
-                                    className="w-10 h-10 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors flex items-center justify-center"
+                                    className="w-10 h-10 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors flex items-center justify-center cursor-pointer"
                                 >
                                     ✕
                                 </button>

@@ -185,7 +185,7 @@ export function Logo({ className, size = "md", showText = true }: LogoProps) {
             {/* Logo Image */}
             <div className={cn("relative", sizeStyles[size])}>
                 <Image
-                    src="/assets/images/branding/logo.jpeg"
+                    src="/assets/images/branding/logo.png"
                     alt="Honesty Engineering Logo"
                     fill
                     className="object-contain"

@@ -162,7 +162,7 @@ export function Hero() {
                             {/* Service Wheel Image */}
                             <div className="relative w-full h-full rounded-full overflow-hidden border-4 border-white/30 shadow-2xl">
                                 <Image
-                                    src="/assets/images/hero/service-wheel.jpeg"
+                                    src="/assets/images/hero/service-wheel.png"
                                     alt="Honesty Engineering Services"
                                     fill
                                     className="object-cover"
@@ -235,7 +235,7 @@ export function Hero() {
                             {/* Close Button */}
                             <button
                                 onClick={() => setShowPdfModal(false)}
-                                className="absolute top-4 right-4 z-10 w-10 h-10 bg-primary-500 hover:bg-primary-600 text-white rounded-full flex items-center justify-center shadow-lg transition-colors"
+                                className="absolute top-4 right-4 z-10 w-10 h-10 bg-primary-500 hover:bg-primary-600 text-white rounded-full flex items-center justify-center shadow-lg transition-colors cursor-pointer"
                             >
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

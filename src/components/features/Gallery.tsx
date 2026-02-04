@@ -51,7 +51,7 @@ export function Gallery() {
                             key={category}
                             onClick={() => setActiveCategory(category)}
                             className={cn(
-                                "px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-300",
+                                "px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-300 cursor-pointer",
                                 activeCategory === category
                                     ? "bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg"
                                     : "bg-white text-primary-700 hover:bg-primary-100 border border-primary-200"

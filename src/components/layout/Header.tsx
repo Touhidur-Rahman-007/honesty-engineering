@@ -55,33 +55,26 @@ function GlassButton({
         <motion.button
             onClick={onClick}
             className={cn(
-                "relative px-4 py-2 rounded-2xl font-semibold text-[14px] transition-all duration-300 overflow-hidden",
-                "border border-white/30",
-                "backdrop-blur-xl",
+                "relative px-4 py-2 font-semibold text-[14px] group cursor-pointer",
                 isScrolled 
-                    ? "bg-white/40 text-primary-700 hover:bg-white/60 shadow-[0_4px_30px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.15)]" 
-                    : "bg-white/15 text-white hover:bg-white/25 shadow-[0_4px_30px_rgba(255,255,255,0.1)] hover:shadow-[0_8px_32px_rgba(255,255,255,0.2)]",
-                isActive && (isScrolled ? "bg-primary-100/60 border-primary-300/50" : "bg-white/30 border-white/50"),
+                    ? "text-primary-700" 
+                    : "text-white",
                 className
             )}
-            whileHover={{ scale: 1.05, y: -2 }}
+            whileHover={{ y: -2 }}
             whileTap={{ scale: 0.95 }}
-            style={{
-                WebkitBackdropFilter: "blur(20px) saturate(180%)",
-                backdropFilter: "blur(20px) saturate(180%)",
-            }}
         >
-            {/* Inner glow effect */}
-            <span className={cn(
-                "absolute inset-0 rounded-2xl opacity-0 hover:opacity-100 transition-opacity duration-300",
-                isScrolled 
-                    ? "bg-gradient-to-b from-white/40 to-transparent" 
-                    : "bg-gradient-to-b from-white/20 to-transparent"
-            )} />
             {/* Content */}
             <span className="relative z-10 flex items-center gap-1">
                 {children}
             </span>
+            {/* Bottom border - 75% width, centered */}
+            <span className={cn(
+                "absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-0 transition-all duration-300 ease-out",
+                "group-hover:w-3/4",
+                isScrolled ? "bg-primary-500" : "bg-white",
+                isActive && "w-3/4"
+            )} />
         </motion.button>
     );
 }
@@ -114,16 +107,16 @@ function ServicesDropdown({ isScrolled, onClose }: { isScrolled: boolean; onClos
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
             className={cn(
-                "absolute top-full left-1/2 -translate-x-1/2 mt-3 w-72 p-3 rounded-3xl",
+                "absolute top-full left-1/2 -translate-x-1/2 mt-6 w-72 p-3 rounded-3xl",
                 "border border-white/30",
-                "backdrop-blur-2xl",
+                "backdrop-blur-3xl",
                 isScrolled 
-                    ? "bg-white/70 shadow-[0_8px_32px_rgba(0,0,0,0.15)]" 
-                    : "bg-black/30 shadow-[0_8px_32px_rgba(0,0,0,0.3)]"
+                    ? "bg-white/90 shadow-[0_8px_32px_rgba(0,0,0,0.15)]" 
+                    : "bg-black/70 shadow-[0_8px_32px_rgba(0,0,0,0.3)]"
             )}
             style={{
-                WebkitBackdropFilter: "blur(30px) saturate(200%)",
-                backdropFilter: "blur(30px) saturate(200%)",
+                WebkitBackdropFilter: "blur(40px) saturate(200%)",
+                backdropFilter: "blur(40px) saturate(200%)",
             }}
         >
             {/* Dropdown arrow */}
@@ -190,7 +183,7 @@ function ServicesDropdown({ isScrolled, onClose }: { isScrolled: boolean; onClos
 }
 
 // Logo Component with actual logo image
-function Logo({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
+function Logo({ size = "md", isScrolled }: { size?: "sm" | "md" | "lg"; isScrolled?: boolean }) {
     const sizeStyles = {
         sm: { container: "w-10 h-10", text: "text-base" },
         md: { container: "w-14 h-14", text: "text-xl sm:text-2xl" },
@@ -205,7 +198,7 @@ function Logo({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
             {/* Logo Image */}
             <div className={cn("relative", sizeStyles[size].container)}>
                 <Image
-                    src="/assets/images/branding/logo.jpeg"
+                    src={isScrolled ? "/assets/images/branding/logo.png" : "/assets/images/branding/logoWhite.png"}
                     alt="Honesty Engineering Logo"
                     fill
                     className="object-contain"
@@ -287,7 +280,7 @@ function QuoteModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
                             <h2 className="text-2xl font-bold text-white">Get a Quote</h2>
                             <button
                                 onClick={onClose}
-                                className="text-white/80 hover:text-white transition-colors p-1"
+                                className="text-white/80 hover:text-white transition-colors p-1 cursor-pointer"
                             >
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -544,7 +537,7 @@ export function Header() {
                     <nav className="flex items-center justify-between h-20">
                         {/* Logo */}
                         <Link href="/" className="relative z-10">
-                            <Logo size={showScrolledStyle ? "sm" : "md"} />
+                            <Logo size={showScrolledStyle ? "sm" : "md"} isScrolled={showScrolledStyle} />
                         </Link>
 
                         {/* Desktop Navigation - Glassmorphism Buttons */}
@@ -715,7 +708,7 @@ export function Header() {
                                     <button
                                         type="button"
                                         onClick={() => setIsServicesDropdownOpen((prev) => !prev)}
-                                        className="text-lg font-bold text-primary-800 hover:text-primary-500 transition-all duration-300 px-6 py-3 rounded-2xl bg-white/40 backdrop-blur-xl border border-white/30 shadow-[0_4px_30px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.15)] w-full text-center flex items-center justify-center gap-2"
+                                        className="text-lg font-bold text-primary-800 hover:text-primary-500 transition-all duration-300 px-6 py-3 rounded-2xl bg-white/40 backdrop-blur-xl border border-white/30 shadow-[0_4px_30px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.15)] w-full text-center flex items-center justify-center gap-2 cursor-pointer"
                                         style={{
                                             WebkitBackdropFilter: "blur(20px)",
                                             backdropFilter: "blur(20px)",
