@@ -10,128 +10,149 @@ require_once __DIR__ . '/../config/cors.php';
 require_once __DIR__ . '/../database/Database.php';
 require_once __DIR__ . '/../database/Response.php';
 
-// Only allow GET requests
-if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-    Response::methodNotAllowed(['GET']);
+$method = $_SERVER['REQUEST_METHOD'];
+
+if (!in_array($method, ['GET', 'POST', 'PUT', 'DELETE'])) {
+    Response::methodNotAllowed(['GET', 'POST', 'PUT', 'DELETE']);
 }
 
-try {
-    $database = new Database();
-    $db = $database->getConnection();
-    
-    if (!$db) {
-        Response::serverError('Database connection failed');
-    }
-    
-    // Check if category filter is provided
-    $categorySlug = isset($_GET['category']) ? trim($_GET['category']) : null;
-    
-    if ($categorySlug && $categorySlug !== 'all') {
-        // Get products for specific category
-        $query = "
-            SELECT 
-                pc.id as category_id,
-                pc.name as category_name,
-                pc.slug as category_slug,
-                pc.description as category_description,
-                p.id as product_id,
-                p.name as product_name,
-                p.description as product_description,
-                p.image as product_image,
-                p.specifications,
-                p.price
-            FROM product_categories pc
-            LEFT JOIN products p ON pc.id = p.category_id AND p.is_active = 1
-            WHERE pc.slug = :slug AND pc.is_active = 1
-            ORDER BY p.display_order ASC
-        ";
+$database = new Database();
+$db = $database->getConnection();
+
+if (!$db) {
+    Response::serverError('Database connection failed');
+}
+
+// Handle GET - Fetch all products
+if ($method === 'GET') {
+    try {
+        // Get sorting parameters
+        $sortBy = isset($_GET['sort']) ? $_GET['sort'] : 'display_order';
+        $sortOrder = isset($_GET['order']) && strtoupper($_GET['order']) === 'DESC' ? 'DESC' : 'ASC';
         
-        $results = $database->query($query, ['slug' => $categorySlug]);
-        
-        if (empty($results)) {
-            Response::notFound('Category');
+        // Validate sort field
+        $allowedSortFields = ['display_order', 'name', 'created_at', 'id'];
+        if (!in_array($sortBy, $allowedSortFields)) {
+            $sortBy = 'display_order';
         }
         
-        // Format response
-        $category = [
-            'id' => $results[0]['category_id'],
-            'name' => $results[0]['category_name'],
-            'slug' => $results[0]['category_slug'],
-            'description' => $results[0]['category_description'],
-            'products' => []
-        ];
+        // First get all categories
+        $categoriesQuery = "SELECT * FROM product_categories ORDER BY display_order ASC";
+        $categories = $database->query($categoriesQuery);
         
-        foreach ($results as $row) {
-            if ($row['product_id']) {
-                $category['products'][] = [
-                    'id' => $row['product_id'],
-                    'name' => $row['product_name'],
-                    'description' => $row['product_description'],
-                    'image' => $row['product_image'],
-                    'specifications' => $row['specifications'],
-                    'price' => $row['price'],
-                ];
-            }
-        }
-        
-        Response::success($category);
-        
-    } else {
-        // Get all products grouped by category
-        $query = "
+        // Then get all products
+        $productsQuery = "
             SELECT 
-                pc.id as category_id,
+                p.*,
                 pc.name as category_name,
-                pc.slug as category_slug,
-                pc.description as category_description,
-                p.id as product_id,
-                p.name as product_name,
-                p.description as product_description,
-                p.image as product_image,
-                p.specifications,
-                p.price
-            FROM product_categories pc
-            LEFT JOIN products p ON pc.id = p.category_id AND p.is_active = 1
-            WHERE pc.is_active = 1
-            ORDER BY pc.display_order ASC, p.display_order ASC
+                pc.slug as category_slug
+            FROM products p
+            LEFT JOIN product_categories pc ON p.category_id = pc.id
+            ORDER BY p.{$sortBy} {$sortOrder}
         ";
-        
-        $results = $database->query($query);
+        $allProducts = $database->query($productsQuery);
         
         // Group products by category
-        $categories = [];
-        $categoryMap = [];
-        
-        foreach ($results as $row) {
-            $catId = $row['category_id'];
+        $result = [];
+        foreach ($categories as $category) {
+            $categoryProducts = array_filter($allProducts, function($product) use ($category) {
+                return $product['category_id'] == $category['id'];
+            });
             
-            if (!isset($categoryMap[$catId])) {
-                $categoryMap[$catId] = count($categories);
-                $categories[] = [
-                    'id' => $catId,
-                    'name' => $row['category_name'],
-                    'slug' => $row['category_slug'],
-                    'description' => $row['category_description'],
-                    'products' => []
-                ];
-            }
-            
-            if ($row['product_id']) {
-                $categories[$categoryMap[$catId]]['products'][] = [
-                    'id' => $row['product_id'],
-                    'name' => $row['product_name'],
-                    'description' => $row['product_description'],
-                    'image' => $row['product_image'],
-                    'specifications' => $row['specifications'],
-                    'price' => $row['price'],
-                ];
-            }
+            $result[] = [
+                'id' => $category['id'],
+                'name' => $category['name'],
+                'slug' => $category['slug'],
+                'display_order' => $category['display_order'],
+                'products' => array_values($categoryProducts)
+            ];
         }
         
-        Response::success($categories);
+        Response::success($result);
+        
+    } catch (Exception $e) {
+        error_log("Products API Error: " . $e->getMessage());
+        Response::serverError('An error occurred while fetching products');
     }
-    
-} catch (Exception $e) {
-    error_log("Products API Error: " . $e->getMessage());
-    Response::serverError('An error occurred while fetching products');
+}
+
+// Handle POST - Create product
+if ($method === 'POST') {
+    try {
+        $input = json_decode(file_get_contents('php://input'), true);
+        
+        $stmt = $db->prepare("
+            INSERT INTO products (name, description, category_id, image, display_order)
+            VALUES (?, ?, ?, ?, ?)
+        ");
+        $stmt->execute([
+            $input['name'] ?? '',
+            $input['description'] ?? '',
+            $input['category_id'] ?? null,
+            $input['image'] ?? '',
+            $input['display_order'] ?? 0
+        ]);
+        
+        Response::created(['message' => 'Product created successfully', 'id' => $db->lastInsertId()]);
+        
+    } catch (Exception $e) {
+        error_log("Products API Error: " . $e->getMessage());
+        Response::serverError('An error occurred while creating product');
+    }
+}
+
+// Handle PUT - Update product
+if ($method === 'PUT') {
+    try {
+        $input = json_decode(file_get_contents('php://input'), true);
+        $id = isset($_GET['id']) ? intval($_GET['id']) : ($input['id'] ?? 0);
+        
+        if ($id <= 0) {
+            Response::badRequest('Invalid ID');
+        }
+        
+        $stmt = $db->prepare("
+            UPDATE products SET 
+                name = ?,
+                description = ?,
+                category_id = ?,
+                image = ?,
+                display_order = ?
+            WHERE id = ?
+        ");
+        $stmt->execute([
+            $input['name'] ?? '',
+            $input['description'] ?? '',
+            $input['category_id'] ?? null,
+            $input['image'] ?? '',
+            $input['display_order'] ?? 0,
+            $id
+        ]);
+        
+        Response::success(['message' => 'Product updated successfully']);
+        
+    } catch (Exception $e) {
+        error_log("Products API Error: " . $e->getMessage());
+        Response::serverError('An error occurred while updating product');
+    }
+}
+
+// Handle DELETE - Delete product
+if ($method === 'DELETE') {
+    try {
+        $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+        
+        if ($id <= 0) {
+            Response::badRequest('Invalid ID');
+        }
+        
+        $stmt = $db->prepare("DELETE FROM products WHERE id = ?");
+        $stmt->execute([$id]);
+        
+        Response::success(['message' => 'Product deleted successfully']);
+        
+    } catch (Exception $e) {
+        error_log("Products API Error: " . $e->getMessage());
+        Response::serverError('An error occurred while deleting product');
+    }
 }

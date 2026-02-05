@@ -20,7 +20,9 @@
 </IfModule>
 
 # Block sensitive & hidden files
-<FilesMatch "\.(env|sql|log|ini|json|bak)$|^\.[^/]+">Require all denied</FilesMatch>
+<FilesMatch "\.(env|sql|log|ini|json|bak)$|^\.[^/]+">
+    Require all denied
+</FilesMatch>
 
 # Compression
 <IfModule mod_deflate.c>

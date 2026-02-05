@@ -11,13 +11,22 @@ require_once __DIR__ . '/../config/cors.php';
 require_once __DIR__ . '/../database/Database.php';
 require_once __DIR__ . '/../database/Response.php';
 
-// Only allow GET requests
-if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-    Response::methodNotAllowed(['GET']);
+$method = $_SERVER['REQUEST_METHOD'];
+
+if (!in_array($method, ['GET', 'POST', 'PUT', 'DELETE'])) {
+    Response::methodNotAllowed(['GET', 'POST', 'PUT', 'DELETE']);
 }
 
-try {
-    $database = new Database();
+$database = new Database();
+$db = $database->getConnection();
+
+if (!$db) {
+    Response::serverError('Database connection failed');
+}
+
+// Handle GET
+if ($method === 'GET') {
+    try {
     $db = $database->getConnection();
     
     if (!$db) {
@@ -92,4 +101,104 @@ try {
 } catch (Exception $e) {
     error_log("Projects API Error: " . $e->getMessage());
     Response::serverError('An error occurred while fetching projects');
+}
+}
+
+// Handle POST - Create project
+if ($method === 'POST') {
+    try {
+        $input = json_decode(file_get_contents('php://input'), true);
+        
+        $stmt = $db->prepare("
+            INSERT INTO projects (title, description, client_name, project_type, location, completion_date, project_value, featured_image, status, is_featured, display_order)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+        $stmt->execute([
+            $input['title'] ?? '',
+            $input['description'] ?? '',
+            $input['client_name'] ?? '',
+            $input['project_type'] ?? '',
+            $input['location'] ?? '',
+            $input['completion_date'] ?? null,
+            $input['project_value'] ?? null,
+            $input['featured_image'] ?? '',
+            $input['status'] ?? 'completed',
+            isset($input['is_featured']) ? 1 : 0,
+            $input['display_order'] ?? 0
+        ]);
+        
+        Response::created(['message' => 'Project created successfully', 'id' => $db->lastInsertId()]);
+        
+    } catch (Exception $e) {
+        error_log("Projects API Error: " . $e->getMessage());
+        Response::serverError('An error occurred while creating project');
+    }
+}
+
+// Handle PUT - Update project
+if ($method === 'PUT') {
+    try {
+        $input = json_decode(file_get_contents('php://input'), true);
+        $id = isset($_GET['id']) ? intval($_GET['id']) : ($input['id'] ?? 0);
+        
+        if ($id <= 0) {
+            Response::badRequest('Invalid ID');
+        }
+        
+        $stmt = $db->prepare("
+            UPDATE projects SET 
+                title = ?,
+                description = ?,
+                client_name = ?,
+                project_type = ?,
+                location = ?,
+                completion_date = ?,
+                project_value = ?,
+                featured_image = ?,
+                status = ?,
+                is_featured = ?,
+                display_order = ?
+            WHERE id = ?
+        ");
+        $stmt->execute([
+            $input['title'] ?? '',
+            $input['description'] ?? '',
+            $input['client_name'] ?? '',
+            $input['project_type'] ?? '',
+            $input['location'] ?? '',
+            $input['completion_date'] ?? null,
+            $input['project_value'] ?? null,
+            $input['featured_image'] ?? '',
+            $input['status'] ?? 'completed',
+            isset($input['is_featured']) ? 1 : 0,
+            $input['display_order'] ?? 0,
+            $id
+        ]);
+        
+        Response::success(['message' => 'Project updated successfully']);
+        
+    } catch (Exception $e) {
+        error_log("Projects API Error: " . $e->getMessage());
+        Response::serverError('An error occurred while updating project');
+    }
+}
+
+// Handle DELETE - Delete project
+if ($method === 'DELETE') {
+    try {
+        $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+        
+        if ($id <= 0) {
+            Response::badRequest('Invalid ID');
+        }
+        
+        $stmt = $db->prepare("DELETE FROM projects WHERE id = ?");
+        $stmt->execute([$id]);
+        
+        Response::success(['message' => 'Project deleted successfully']);
+        
+    } catch (Exception $e) {
+        error_log("Projects API Error: " . $e->getMessage());
+        Response::serverError('An error occurred while deleting project');
+    }
 }

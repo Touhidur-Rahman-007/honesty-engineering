@@ -219,6 +219,7 @@ function Logo({ size = "md", isScrolled }: { size?: "sm" | "md" | "lg"; isScroll
 
 // Quote Modal Component
 function QuoteModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+    const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "/honesty-engineering/backend/api";
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -233,19 +234,50 @@ function QuoteModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
-        
-        // Simulate form submission
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        setIsSubmitting(false);
-        setIsSubmitted(true);
-        
-        // Reset after 3 seconds
-        setTimeout(() => {
-            setIsSubmitted(false);
-            setFormData({ name: "", email: "", phone: "", company: "", service: "", message: "" });
-            onClose();
-        }, 3000);
+        try {
+            const subject = formData.service
+                ? `Quote Request - ${formData.service}`
+                : "Quote Request";
+            const messageParts = [
+                formData.company ? `Company: ${formData.company}` : null,
+                formData.message ? `Message: ${formData.message}` : null
+            ].filter(Boolean);
+
+            const payload = {
+                name: formData.name,
+                email: formData.email,
+                phone: formData.phone,
+                subject,
+                message: messageParts.length ? messageParts.join("\n") : "Quote request"
+            };
+
+            const response = await fetch(`${API_BASE}/contact.php`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (!response.ok || !result?.success) {
+                throw new Error(result?.error || result?.message || "Failed to submit request");
+            }
+
+            setIsSubmitted(true);
+
+            setTimeout(() => {
+                setIsSubmitted(false);
+                setFormData({ name: "", email: "", phone: "", company: "", service: "", message: "" });
+                onClose();
+            }, 3000);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Failed to submit request";
+            alert(message);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     if (!isOpen) return null;

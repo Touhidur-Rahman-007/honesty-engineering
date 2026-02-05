@@ -98,4 +98,22 @@ class Response {
     public static function serverError($message = 'Internal server error') {
         self::error($message, 500);
     }
+
+    /**
+     * Send bad request response
+     * @param string $message Error message
+     * @param array $details Optional error details
+     */
+    public static function badRequest($message = 'Bad request', $details = null) {
+        self::error($message, 400, $details);
+    }
+
+    /**
+     * Send created response
+     * @param mixed $data Data to send
+     * @param string $message Optional success message
+     */
+    public static function created($data, $message = null) {
+        self::success($data, $message, 201);
+    }
 }

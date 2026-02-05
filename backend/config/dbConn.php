@@ -16,7 +16,9 @@ if (!defined('DB_CONFIG_ACCESS')) {
 }
 
 // Detect environment (local vs live)
-$isLocal = in_array($_SERVER['HTTP_HOST'] ?? '', ['localhost', '127.0.0.1', 'localhost:80']) 
+// CLI mode check: if running from command line, assume local
+$isLocal = (php_sapi_name() === 'cli') 
+           || in_array($_SERVER['HTTP_HOST'] ?? '', ['localhost', '127.0.0.1', 'localhost:80']) 
            || (isset($_SERVER['SERVER_ADDR']) && $_SERVER['SERVER_ADDR'] === '127.0.0.1');
 
 // Local development configuration

@@ -1,7 +1,8 @@
 <?php
 /**
  * Site Configuration API Endpoint
- * GET /api/site-config
+ * GET /api/site-config - Get site configuration
+ * PUT /api/site-config - Update site configuration
  */
 
 define('CORS_CONFIG_ACCESS', true);
@@ -9,68 +10,124 @@ require_once __DIR__ . '/../config/cors.php';
 require_once __DIR__ . '/../database/Database.php';
 require_once __DIR__ . '/../database/Response.php';
 
-// Only allow GET requests
-if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-    Response::methodNotAllowed(['GET']);
+// Get request method
+$method = $_SERVER['REQUEST_METHOD'];
+
+// Allow GET, PUT
+if (!in_array($method, ['GET', 'PUT'])) {
+    Response::methodNotAllowed(['GET', 'PUT']);
+}
+
+$database = new Database();
+$db = $database->getConnection();
+
+if (!$db) {
+    Response::serverError('Database connection failed');
 }
 
 try {
-    $database = new Database();
-    $db = $database->getConnection();
-    
-    if (!$db) {
-        Response::serverError('Database connection failed');
+    // GET - Fetch site configuration
+    if ($method === 'GET') {
+        // Get site configuration
+        $query = "SELECT * FROM site_config WHERE id = 1 LIMIT 1";
+        $siteConfig = $database->queryOne($query);
+        
+        if (!$siteConfig) {
+            // Return empty config with field names matching admin panel form
+            Response::success([
+                'company_name' => '',
+                'tagline' => '',
+                'email' => '',
+                'phone' => '',
+                'address' => '',
+                'facebook_url' => '',
+                'linkedin_url' => '',
+                'twitter_url' => '',
+                'instagram_url' => ''
+            ]);
+        }
+        
+        // Format the response to match admin panel form field names
+        $data = [
+            'company_name' => $siteConfig['site_name'] ?? '',
+            'tagline' => $siteConfig['tagline'] ?? '',
+            'email' => $siteConfig['email'] ?? '',
+            'phone' => $siteConfig['phone'] ?? '',
+            'address' => $siteConfig['address'] ?? '',
+            'facebook_url' => $siteConfig['social_facebook'] ?? '',
+            'linkedin_url' => $siteConfig['social_linkedin'] ?? '',
+            'twitter_url' => $siteConfig['social_whatsapp'] ?? '',
+            'instagram_url' => $siteConfig['social_instagram'] ?? ''
+        ];
+        
+        Response::success($data);
     }
     
-    // Get site configuration
-    $query = "SELECT * FROM site_config WHERE id = 1 LIMIT 1";
-    $siteConfig = $database->queryOne($query);
-    
-    if (!$siteConfig) {
-        Response::error('Site configuration not found', 404);
+    // PUT - Update site configuration
+    elseif ($method === 'PUT') {
+        $data = json_decode(file_get_contents('php://input'), true);
+        
+        if (!$data) {
+            Response::badRequest('Invalid JSON data');
+        }
+        
+        // Check if record exists
+        $checkQuery = "SELECT id FROM site_config WHERE id = 1";
+        $exists = $database->queryOne($checkQuery);
+        
+        if ($exists) {
+            // Update existing configuration
+            $query = "
+                UPDATE site_config SET
+                    site_name = :site_name,
+                    tagline = :tagline,
+                    email = :email,
+                    phone = :phone,
+                    address = :address,
+                    social_facebook = :facebook_url,
+                    social_linkedin = :linkedin_url,
+                    social_whatsapp = :twitter_url,
+                    social_instagram = :instagram_url,
+                    updated_at = NOW()
+                WHERE id = 1
+            ";
+        } else {
+            // Insert new configuration
+            $query = "
+                INSERT INTO site_config (
+                    id, site_name, tagline, email, phone, address,
+                    social_facebook, social_linkedin, social_whatsapp, social_instagram,
+                    updated_at
+                ) VALUES (
+                    1, :site_name, :tagline, :email, :phone, :address,
+                    :facebook_url, :linkedin_url, :twitter_url, :instagram_url,
+                    NOW()
+                )
+            ";
+        }
+        
+        $params = [
+            'site_name' => isset($data['company_name']) ? trim($data['company_name']) : '',
+            'tagline' => isset($data['tagline']) ? trim($data['tagline']) : '',
+            'email' => isset($data['email']) ? trim($data['email']) : '',
+            'phone' => isset($data['phone']) ? trim($data['phone']) : '',
+            'address' => isset($data['address']) ? trim($data['address']) : '',
+            'facebook_url' => isset($data['facebook_url']) ? trim($data['facebook_url']) : '',
+            'linkedin_url' => isset($data['linkedin_url']) ? trim($data['linkedin_url']) : '',
+            'twitter_url' => isset($data['twitter_url']) ? trim($data['twitter_url']) : '',
+            'instagram_url' => isset($data['instagram_url']) ? trim($data['instagram_url']) : ''
+        ];
+        
+        $result = $database->execute($query, $params);
+        
+        if ($result) {
+            Response::success(['message' => 'Site configuration updated successfully']);
+        } else {
+            Response::serverError('Failed to update site configuration');
+        }
     }
-    
-    // Format the response
-    $data = [
-        'site_name' => $siteConfig['site_name'],
-        'tagline' => $siteConfig['tagline'],
-        'description' => $siteConfig['description'],
-        'url' => $siteConfig['site_url'],
-        'email' => $siteConfig['email'],
-        'phone' => $siteConfig['phone'],
-        'address' => [
-            'street' => $siteConfig['address_street'],
-            'sector' => $siteConfig['address_sector'],
-            'area' => $siteConfig['address_area'],
-            'city' => $siteConfig['address_city'],
-            'postal_code' => $siteConfig['address_postal_code'],
-            'country' => $siteConfig['address_country'],
-        ],
-        'credentials' => [
-            'trade_license' => $siteConfig['trade_license'],
-            'tin' => $siteConfig['tin'],
-            'vat' => $siteConfig['vat'],
-            'bepza' => $siteConfig['bepza'],
-        ],
-        'founding_year' => (int)$siteConfig['founding_year'],
-        'logo' => $siteConfig['logo'],
-        'favicon' => $siteConfig['favicon'],
-        'social' => [
-            'facebook' => $siteConfig['social_facebook'],
-            'linkedin' => $siteConfig['social_linkedin'],
-            'whatsapp' => $siteConfig['social_whatsapp'],
-            'youtube' => $siteConfig['social_youtube'],
-            'instagram' => $siteConfig['social_instagram'],
-        ],
-        'powered_by' => [
-            'name' => $siteConfig['powered_by_name'],
-            'url' => $siteConfig['powered_by_url'],
-        ],
-    ];
-    
-    Response::success($data);
     
 } catch (Exception $e) {
     error_log("Site Config API Error: " . $e->getMessage());
-    Response::serverError('An error occurred while fetching site configuration');
+    Response::serverError('An error occurred: ' . $e->getMessage());
 }

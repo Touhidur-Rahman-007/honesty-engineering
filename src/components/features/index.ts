@@ -3,6 +3,7 @@ export { About } from "./About";
 export { CEOMessage } from "./CEOMessage";
 export { Turnkey } from "./Turnkey";
 export { Services } from "./Services";
+export { default as ServicesByCategory } from "./ServicesByCategory";
 export { Products } from "./Products";
 export { Gallery } from "./Gallery";
 export { SuccessStories } from "./SuccessStories";

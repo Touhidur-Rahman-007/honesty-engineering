@@ -35,6 +35,7 @@ const contactInfo = {
 export function Contact() {
     const ref = useRef(null);
     const isInView = useInView(ref, { once: true, amount: 0.2 });
+    const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "/honesty-engineering/backend/api";
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -47,11 +48,29 @@ export function Contact() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
-        // Simulate form submission
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        setIsSubmitting(false);
-        setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
-        alert("Message sent successfully!");
+        try {
+            const response = await fetch(`${API_BASE}/contact.php`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const result = await response.json();
+
+            if (!response.ok || !result?.success) {
+                throw new Error(result?.error || result?.message || "Failed to send message");
+            }
+
+            setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
+            alert("Message sent successfully!");
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Failed to send message";
+            alert(message);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (

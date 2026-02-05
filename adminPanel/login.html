@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Honesty Engineering</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="min-h-screen flex items-center justify-center" style="background: radial-gradient(ellipse 1200px 800px at 20% 10%, rgba(139, 195, 74, 0.18), transparent 60%),
+                        radial-gradient(ellipse 1100px 750px at 80% 90%, rgba(104, 159, 56, 0.15), transparent 65%),
+                        linear-gradient(135deg, #0a231c 0%, #0d3028 40%, #11412f 70%, #1a5238 100%); background-attachment: fixed;">
+    <div class="w-full max-w-md">
+        <div class="bg-white rounded-3xl shadow-2xl p-10" style="box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25), 0 10px 30px rgba(124, 179, 66, 0.15); border: 1px solid rgba(139, 195, 74, 0.1);">
+            <div class="text-center mb-8">
+                <div class="inline-block p-5 rounded-full mb-4" style="background: linear-gradient(135deg, rgba(139, 195, 74, 0.15) 0%, rgba(124, 179, 66, 0.08) 100%); box-shadow: 0 8px 24px rgba(124, 179, 66, 0.12);">
+                    <i class="fas fa-shield-alt text-5xl" style="color: #689f38;"></i>
+                </div>
+                <h1 class="text-4xl font-bold mb-2" style="color: #2e7d32;">Admin Panel</h1>
+                <p class="text-gray-600 mt-2 text-lg">Honesty Engineering</p>
+            </div>
+            
+            <form id="loginForm" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-user text-gray-400"></i>
+                        </div>
+                        <input type="text" id="username" name="username" required
+                            class="pl-10 w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none transition-all"
+                            style="border-color: rgba(139, 195, 74, 0.2);"
+                            onfocus="this.style.borderColor='#8bc34a'; this.style.boxShadow='0 0 0 3px rgba(139, 195, 74, 0.1)';"
+                            onblur="this.style.borderColor='rgba(139, 195, 74, 0.2)'; this.style.boxShadow='none';"
+                            placeholder="Enter username">
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-lock text-gray-400"></i>
+                        </div>
+                        <input type="password" id="password" name="password" required
+                            class="pl-10 w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none transition-all"
+                            style="border-color: rgba(139, 195, 74, 0.2);"
+                            onfocus="this.style.borderColor='#8bc34a'; this.style.boxShadow='0 0 0 3px rgba(139, 195, 74, 0.1)';"
+                            onblur="this.style.borderColor='rgba(139, 195, 74, 0.2)'; this.style.boxShadow='none';"
+                            placeholder="Enter password">
+                        <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="errorMessage" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    <span id="errorText">Invalid username or password</span>
+                </div>
+                
+                <button type="submit" 
+                    class="w-full text-white py-4 rounded-xl font-semibold transition-all transform shadow-lg"
+                    style="background: linear-gradient(135deg, #8bc34a 0%, #689f38 100%); box-shadow: 0 10px 30px rgba(124, 179, 66, 0.3);"
+                    onmouseover="this.style.background='linear-gradient(135deg, #9ccc65 0%, #7cb342 100%)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 15px 40px rgba(124, 179, 66, 0.4)';"
+                    onmouseout="this.style.background='linear-gradient(135deg, #8bc34a 0%, #689f38 100%)'; this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 30px rgba(124, 179, 66, 0.3)';">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Login
+                </button>
+            </form>
+        </div>
+        
+        <p class="text-center text-white text-sm mt-6">
+            <i class="fas fa-code mr-1"></i>
+            Developed by <a href="https://zyrotech.io" target="_blank" rel="noopener" class="underline font-semibold">ZyroTech Bangladesh</a>
+        </p>
+    </div>
+
+    <script>
+        const API_BASE_URL = '../backend/api';
+
+        function setAuthStorage(username) {
+            try {
+                localStorage.setItem('adminLoggedIn', 'true');
+                localStorage.setItem('adminUsername', username || 'Admin');
+            } catch (error) {
+                // Ignore localStorage errors
+            }
+
+            try {
+                sessionStorage.setItem('adminLoggedIn', 'true');
+                sessionStorage.setItem('adminUsername', username || 'Admin');
+            } catch (error) {
+                // Ignore sessionStorage errors
+            }
+
+            document.cookie = `adminLoggedIn=true; path=/; max-age=${60 * 60 * 24 * 7}`;
+            document.cookie = `adminUsername=${encodeURIComponent(username || 'Admin')}; path=/; max-age=${60 * 60 * 24 * 7}`;
+        }
+
+        async function loginRequest(username, password) {
+            const response = await fetch(`${API_BASE_URL}/auth.php`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({}));
+                throw new Error(error?.error || 'Invalid credentials');
+            }
+
+            return response.json();
+        }
+
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const errorDiv = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        const togglePasswordBtn = document.getElementById('togglePassword');
+
+        togglePasswordBtn.addEventListener('click', () => {
+            const isHidden = passwordInput.type === 'password';
+            passwordInput.type = isHidden ? 'text' : 'password';
+            togglePasswordBtn.innerHTML = isHidden ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+        });
+
+        const hideError = () => errorDiv.classList.add('hidden');
+        usernameInput.addEventListener('input', hideError);
+        passwordInput.addEventListener('input', hideError);
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+
+            if (!username || !password) {
+                errorText.textContent = 'Please enter username and password';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+            
+            try {
+                await loginRequest(username, password);
+                setAuthStorage(username);
+                window.location.href = 'index.html';
+            } catch (error) {
+                errorText.textContent = error.message || 'Invalid username or password';
+                errorDiv.classList.remove('hidden');
+                setTimeout(() => errorDiv.classList.add('hidden'), 3000);
+            }
+        });
+        
+        // Check if already logged in
+        if (localStorage.getItem('adminLoggedIn') === 'true' || sessionStorage.getItem('adminLoggedIn') === 'true') {
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
