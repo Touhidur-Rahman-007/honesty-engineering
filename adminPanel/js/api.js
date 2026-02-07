@@ -1,5 +1,32 @@
 // API Helper Functions
 const API_BASE = '/honesty-engineering/backend/api';
+const PUBLIC_BASE = '/honesty-engineering/public';
+
+// Utility to resolve image paths
+const ImagePath = {
+    resolve(path) {
+        if (!path) return '';
+        // If already a full URL, return as is
+        if (path.startsWith('http://') || path.startsWith('https://')) {
+            return path;
+        }
+        // If starts with /uploads/, prepend PUBLIC_BASE
+        if (path.startsWith('/uploads/')) {
+            return PUBLIC_BASE + path;
+        }
+        // If starts with uploads/ (relative), prepend PUBLIC_BASE
+        if (path.startsWith('uploads/')) {
+            return PUBLIC_BASE + '/' + path;
+        }
+        // For other paths starting with /, prepend PUBLIC_BASE
+        if (path.startsWith('/')) {
+            return PUBLIC_BASE + path;
+        }
+        // For relative paths, add /
+        return PUBLIC_BASE + '/' + path;
+    }
+};
+
 const API = {
     baseURL: API_BASE,
     
@@ -95,6 +122,13 @@ const API = {
         });
     },
     
+    updateServiceOrder(orders) {
+        return this.request('/services.php', {
+            method: 'PATCH',
+            body: JSON.stringify({ orders })
+        });
+    },
+
     deleteService(id) {
         return this.request(`/services.php?id=${id}`, {
             method: 'DELETE'
@@ -169,6 +203,13 @@ const API = {
             body: JSON.stringify(data)
         });
     },
+
+    updateClientOrder(orders) {
+        return this.request('/clients.php', {
+            method: 'PATCH',
+            body: JSON.stringify({ orders })
+        });
+    },
     
     deleteClient(id) {
         return this.request(`/clients.php?id=${id}`, {
@@ -219,11 +260,31 @@ const API = {
         return this.request(`/contact.php?action=view&id=${id}`);
     },
 
-    replyInquiry(inquiryId, replyMessage) {
-        return this.request('/contact.php?action=reply', {
-            method: 'POST',
-            body: JSON.stringify({ inquiry_id: inquiryId, reply_message: replyMessage })
-        });
+    replyInquiry(inquiryId, replyMessage, attachment = null) {
+        if (attachment) {
+            // Use FormData for file upload
+            const formData = new FormData();
+            formData.append('inquiry_id', inquiryId);
+            formData.append('reply_message', replyMessage);
+            formData.append('attachment', attachment);
+            
+            return fetch(`${this.baseURL}/contact.php?action=reply`, {
+                method: 'POST',
+                credentials: 'include',
+                body: formData
+            }).then(response => response.json()).then(data => {
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to send reply');
+                }
+                return data;
+            });
+        } else {
+            // JSON request without attachment
+            return this.request('/contact.php?action=reply', {
+                method: 'POST',
+                body: JSON.stringify({ inquiry_id: inquiryId, reply_message: replyMessage })
+            });
+        }
     },
 
     archiveInquiry(id) {
@@ -233,10 +294,24 @@ const API = {
         });
     },
 
+    unarchiveInquiry(id) {
+        return this.request('/contact.php?action=unarchive', {
+            method: 'POST',
+            body: JSON.stringify({ id })
+        });
+    },
+
     deleteInquiry(id) {
         return this.request('/contact.php?action=delete', {
             method: 'POST',
             body: JSON.stringify({ id })
+        });
+    },
+
+    deleteReply(replyId) {
+        return this.request('/contact.php?action=delete-reply', {
+            method: 'POST',
+            body: JSON.stringify({ reply_id: replyId })
         });
     }
 };

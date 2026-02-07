@@ -32,13 +32,39 @@ if (!$db) {
 try {
     // GET - Fetch gallery images
     if ($method === 'GET') {
+        $action = isset($_GET['action']) ? trim($_GET['action']) : '';
         $id = isset($_GET['id']) ? intval($_GET['id']) : null;
+        
+        // Handle action=categories - return only categories
+        if ($action === 'categories') {
+            $categoriesQuery = "
+                SELECT 
+                    id,
+                    name,
+                    slug,
+                    display_order
+                FROM gallery_categories 
+                ORDER BY display_order ASC
+            ";
+            
+            $categories = $database->query($categoriesQuery);
+            Response::success($categories ?: []);
+            exit;
+        }
         
         if ($id) {
             // Get single image
             $query = "
                 SELECT 
-                    g.*,
+                    g.id,
+                    g.title,
+                    g.description,
+                    g.image_url as image_path,
+                    g.image_url as thumbnail_path,
+                    g.is_featured,
+                    g.display_order,
+                    g.category_id,
+                    g.created_at,
                     gc.name as category_name,
                     gc.slug as category_slug
                 FROM gallery g
@@ -102,8 +128,7 @@ try {
                     id,
                     name,
                     slug,
-                    description,
-                    is_active
+                    display_order
                 FROM gallery_categories 
                 ORDER BY display_order ASC
             ";
@@ -131,27 +156,37 @@ try {
             Response::badRequest('Image path is required');
         }
         
+        // Get category_id from category_slug if provided
+        $categoryId = null;
+        if (isset($data['category_slug']) && !empty(trim($data['category_slug']))) {
+            $catResult = $database->queryOne(
+                'SELECT id FROM gallery_categories WHERE slug = :slug',
+                ['slug' => trim($data['category_slug'])]
+            );
+            $categoryId = $catResult ? $catResult['id'] : null;
+        } elseif (isset($data['category_id'])) {
+            $categoryId = intval($data['category_id']);
+        }
+        
         $query = "
             INSERT INTO gallery (
-                title, description, image_path, thumbnail_path,
+                title, description, image_url,
                 category_id, is_featured, display_order, 
-                is_active, created_at
+                created_at
             ) VALUES (
-                :title, :description, :image_path, :thumbnail_path,
+                :title, :description, :image_url,
                 :category_id, :is_featured, :display_order,
-                :is_active, NOW()
+                NOW()
             )
         ";
         
         $params = [
             'title' => trim($data['title']),
             'description' => isset($data['description']) ? trim($data['description']) : null,
-            'image_path' => trim($data['image_path']),
-            'thumbnail_path' => isset($data['thumbnail_path']) ? trim($data['thumbnail_path']) : null,
-            'category_id' => isset($data['category_id']) ? intval($data['category_id']) : null,
+            'image_url' => trim($data['image_path']),
+            'category_id' => $categoryId,
             'is_featured' => isset($data['is_featured']) ? intval($data['is_featured']) : 0,
-            'display_order' => isset($data['display_order']) ? intval($data['display_order']) : 0,
-            'is_active' => isset($data['is_active']) ? intval($data['is_active']) : 1
+            'display_order' => isset($data['display_order']) ? intval($data['display_order']) : 0
         ];
         
         $result = $database->execute($query, $params);
@@ -175,17 +210,26 @@ try {
             Response::badRequest('Image title is required');
         }
         
+        // Get category_id from category_slug if provided
+        $categoryId = null;
+        if (isset($data['category_slug']) && !empty(trim($data['category_slug']))) {
+            $catResult = $database->queryOne(
+                'SELECT id FROM gallery_categories WHERE slug = :slug',
+                ['slug' => trim($data['category_slug'])]
+            );
+            $categoryId = $catResult ? $catResult['id'] : null;
+        } elseif (isset($data['category_id'])) {
+            $categoryId = intval($data['category_id']);
+        }
+        
         $query = "
             UPDATE gallery SET
                 title = :title,
                 description = :description,
-                image_path = :image_path,
-                thumbnail_path = :thumbnail_path,
+                image_url = :image_url,
                 category_id = :category_id,
                 is_featured = :is_featured,
-                display_order = :display_order,
-                is_active = :is_active,
-                updated_at = NOW()
+                display_order = :display_order
             WHERE id = :id
         ";
         
@@ -193,12 +237,10 @@ try {
             'id' => intval($data['id']),
             'title' => trim($data['title']),
             'description' => isset($data['description']) ? trim($data['description']) : null,
-            'image_path' => isset($data['image_path']) ? trim($data['image_path']) : null,
-            'thumbnail_path' => isset($data['thumbnail_path']) ? trim($data['thumbnail_path']) : null,
-            'category_id' => isset($data['category_id']) ? intval($data['category_id']) : null,
+            'image_url' => isset($data['image_path']) ? trim($data['image_path']) : null,
+            'category_id' => $categoryId,
             'is_featured' => isset($data['is_featured']) ? intval($data['is_featured']) : 0,
-            'display_order' => isset($data['display_order']) ? intval($data['display_order']) : 0,
-            'is_active' => isset($data['is_active']) ? intval($data['is_active']) : 1
+            'display_order' => isset($data['display_order']) ? intval($data['display_order']) : 0
         ];
         
         $result = $database->execute($query, $params);

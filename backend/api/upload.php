@@ -101,7 +101,7 @@ try {
             // Move uploaded file
             if (move_uploaded_file($fileTmpName, $targetPath)) {
                 // Return public URL
-                $relativePath = '/honesty-engineering/public/uploads/' . $folder . '/' . $uniqueName;
+                $relativePath = '/honesty-engineering/uploads/' . $folder . '/' . $uniqueName;
                 $uploadedFiles[] = [
                     'original_name' => $fileName,
                     'filename' => $uniqueName,
@@ -141,13 +141,13 @@ try {
         }
 
         // Security: Ensure path is within uploads directory
-        if (strpos($path, '/honesty-engineering/public/uploads/') !== 0) {
+        if (strpos($path, '/honesty-engineering/uploads/') !== 0) {
             Response::badRequest('Invalid file path');
         }
 
         // Remove leading slash and construct full path
-        $relativePath = ltrim($path, '/');
-        $fullPath = __DIR__ . '/../../' . $relativePath;
+        $relativePath = str_replace('/honesty-engineering/', '', $path);
+        $fullPath = __DIR__ . '/../../public/' . $relativePath;
 
         // Check if file exists
         if (!file_exists($fullPath)) {

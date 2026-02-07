@@ -5,7 +5,9 @@
  * GET /api/contact?action=list
  * GET /api/contact?action=view&id={id}
  * POST /api/contact?action=reply
+ * POST /api/contact?action=delete-reply
  * POST /api/contact?action=archive
+ * POST /api/contact?action=unarchive
  * POST /api/contact?action=delete
  */
 
@@ -49,8 +51,16 @@ try {
             handleReply($database);
         }
 
+        if ($action === 'delete-reply') {
+            handleDeleteReply($database);
+        }
+
         if ($action === 'archive') {
             handleArchive($database);
+        }
+
+        if ($action === 'unarchive') {
+            handleUnarchive($database);
         }
 
         if ($action === 'delete') {
@@ -169,9 +179,17 @@ function handleList(Database $database) {
     $total = $countResult ? intval($countResult['total']) : 0;
 
     $query = "
-        SELECT * FROM contact_inquiries
+        SELECT
+            ci.*,
+            COALESCE(rc.reply_count, 0) AS reply_count
+        FROM contact_inquiries ci
+        LEFT JOIN (
+            SELECT inquiry_id, COUNT(*) AS reply_count
+            FROM inquiry_replies
+            GROUP BY inquiry_id
+        ) rc ON rc.inquiry_id = ci.id
         $whereSql
-        ORDER BY created_at DESC
+        ORDER BY ci.created_at DESC
         LIMIT :limit OFFSET :offset
     ";
 
@@ -224,7 +242,7 @@ function handleView(Database $database) {
 
     // Fetch all replies for this inquiry
     $replies = $database->query(
-        'SELECT * FROM inquiry_replies WHERE inquiry_id = :inquiry_id ORDER BY sent_at ASC',
+        'SELECT id, inquiry_id, reply_message, sent_by, sent_at, attachment_path, attachment_filename, attachment_size FROM inquiry_replies WHERE inquiry_id = :inquiry_id ORDER BY sent_at ASC',
         ['inquiry_id' => $id]
     );
     
@@ -234,9 +252,16 @@ function handleView(Database $database) {
 }
 
 function handleReply(Database $database) {
-    $input = json_decode(file_get_contents('php://input'), true);
-    if (!is_array($input)) {
-        Response::badRequest('Invalid JSON payload');
+    // Check if this is a file upload or JSON request
+    $isFileUpload = isset($_FILES['attachment']) && $_FILES['attachment']['error'] !== UPLOAD_ERR_NO_FILE;
+    
+    if ($isFileUpload) {
+        $input = $_POST;
+    } else {
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (!is_array($input)) {
+            Response::badRequest('Invalid JSON payload');
+        }
     }
 
     $inquiryId = isset($input['inquiry_id']) ? intval($input['inquiry_id']) : 0;
@@ -261,9 +286,57 @@ function handleReply(Database $database) {
 
     $subject = $inquiry['subject'] ?: 'Your Inquiry';
 
+    $previousReplies = $database->query(
+        'SELECT reply_message, sent_by, sent_at FROM inquiry_replies WHERE inquiry_id = :inquiry_id ORDER BY sent_at ASC',
+        ['inquiry_id' => $inquiryId]
+    );
+    
+    // Handle file upload
+    $attachmentPath = null;
+    $attachmentFilename = null;
+    $attachmentSize = null;
+    
+    if ($isFileUpload && $_FILES['attachment']['error'] === UPLOAD_ERR_OK) {
+        $file = $_FILES['attachment'];
+        
+        // Validate file size (10MB max)
+        if ($file['size'] > 10 * 1024 * 1024) {
+            Response::badRequest('File size exceeds 10MB limit');
+        }
+        
+        // Create upload directory if it doesn't exist
+        $uploadDir = __DIR__ . '/../../public/uploads/documents/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+        
+        // Generate unique filename
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $safeFilename = preg_replace('/[^a-zA-Z0-9._-]/', '_', pathinfo($file['name'], PATHINFO_FILENAME));
+        $uniqueFilename = $safeFilename . '_' . time() . '_' . uniqid() . '.' . $extension;
+        $uploadPath = $uploadDir . $uniqueFilename;
+        
+        if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
+            $attachmentPath = 'uploads/documents/' . $uniqueFilename;
+            $attachmentFilename = $file['name'];
+            $attachmentSize = $file['size'];
+        } else {
+            Response::serverError('Failed to upload attachment');
+        }
+    }
+
     try {
         $mailer = new MailService();
-        $result = $mailer->sendReplyEmail($inquiry['email'], $inquiry['name'], $subject, $replyMessage, $inquiry);
+        $result = $mailer->sendReplyEmail(
+            $inquiry['email'],
+            $inquiry['name'],
+            $subject,
+            $replyMessage,
+            $inquiry,
+            $previousReplies ?: [],
+            $attachmentPath ? __DIR__ . '/../../public/' . $attachmentPath : null,
+            $attachmentFilename
+        );
         
         if (!$result) {
             throw new Exception('Email sending returned false');
@@ -271,11 +344,15 @@ function handleReply(Database $database) {
         
         // Store reply in database
         $database->execute(
-            'INSERT INTO inquiry_replies (inquiry_id, reply_message, sent_by) VALUES (:inquiry_id, :reply_message, :sent_by)',
+            'INSERT INTO inquiry_replies (inquiry_id, reply_message, sent_by, attachment_path, attachment_filename, attachment_size) 
+             VALUES (:inquiry_id, :reply_message, :sent_by, :attachment_path, :attachment_filename, :attachment_size)',
             [
                 'inquiry_id' => $inquiryId,
                 'reply_message' => $replyMessage,
-                'sent_by' => 'Admin'
+                'sent_by' => 'Admin',
+                'attachment_path' => $attachmentPath,
+                'attachment_filename' => $attachmentFilename,
+                'attachment_size' => $attachmentSize
             ]
         );
         
@@ -318,6 +395,74 @@ function handleArchive(Database $database) {
     Response::success(['message' => 'Inquiry archived']);
 }
 
+function handleUnarchive(Database $database) {
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (!is_array($input)) {
+        Response::badRequest('Invalid JSON payload');
+    }
+
+    $id = isset($input['id']) ? intval($input['id']) : 0;
+
+    if ($id <= 0) {
+        Response::badRequest('Invalid ID');
+    }
+
+    $affected = $database->execute(
+        'UPDATE contact_inquiries SET status = "read" WHERE id = :id',
+        ['id' => $id]
+    );
+
+    if ($affected === false) {
+        Response::serverError('Failed to unarchive inquiry');
+    }
+
+    Response::success(['message' => 'Inquiry unarchived']);
+}
+
+function handleDeleteReply(Database $database) {
+    $input = json_decode(file_get_contents('php://input'), true);
+    if (!is_array($input)) {
+        Response::badRequest('Invalid JSON payload');
+    }
+
+    $replyId = isset($input['reply_id']) ? intval($input['reply_id']) : 0;
+
+    if ($replyId <= 0) {
+        Response::badRequest('Invalid reply_id');
+    }
+
+    // First, get the reply to check if it has an attachment
+    $reply = $database->queryOne(
+        'SELECT id, attachment_path FROM inquiry_replies WHERE id = :id',
+        ['id' => $replyId]
+    );
+
+    if (!$reply) {
+        Response::notFound('Reply');
+    }
+
+    // Delete attachment file if exists
+    if (!empty($reply['attachment_path'])) {
+        $filePath = __DIR__ . '/../../public/' . $reply['attachment_path'];
+        if (file_exists($filePath)) {
+            unlink($filePath);
+            error_log('Deleted attachment file: ' . $filePath);
+        }
+    }
+
+    // Now delete the reply from database
+    $affected = $database->execute(
+        'DELETE FROM inquiry_replies WHERE id = :id',
+        ['id' => $replyId]
+    );
+
+    if ($affected === false) {
+        Response::serverError('Failed to delete reply');
+    }
+
+    Response::success(['message' => 'Reply deleted successfully']);
+}
+
 function handleDelete(Database $database) {
     $input = json_decode(file_get_contents('php://input'), true);
     if (!is_array($input)) {
@@ -330,6 +475,26 @@ function handleDelete(Database $database) {
         Response::badRequest('Invalid ID');
     }
 
+    // First, get all replies with attachments for this inquiry
+    $replies = $database->query(
+        'SELECT attachment_path FROM inquiry_replies WHERE inquiry_id = :id AND attachment_path IS NOT NULL',
+        ['id' => $id]
+    );
+    
+    // Delete attachment files from file system
+    if ($replies && count($replies) > 0) {
+        foreach ($replies as $reply) {
+            if (!empty($reply['attachment_path'])) {
+                $filePath = __DIR__ . '/../../public/' . $reply['attachment_path'];
+                if (file_exists($filePath)) {
+                    unlink($filePath);
+                    error_log('Deleted attachment file: ' . $filePath);
+                }
+            }
+        }
+    }
+    
+    // Now delete the inquiry (this will cascade delete all replies due to foreign key)
     $affected = $database->execute(
         'DELETE FROM contact_inquiries WHERE id = :id',
         ['id' => $id]

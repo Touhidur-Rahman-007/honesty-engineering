@@ -16,9 +16,9 @@ require_once __DIR__ . '/../database/Response.php';
 // Get request method
 $method = $_SERVER['REQUEST_METHOD'];
 
-// Allow GET, POST, PUT, DELETE
-if (!in_array($method, ['GET', 'POST', 'PUT', 'DELETE'])) {
-    Response::methodNotAllowed(['GET', 'POST', 'PUT', 'DELETE']);
+// Allow GET, POST, PUT, PATCH, DELETE
+if (!in_array($method, ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])) {
+    Response::methodNotAllowed(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']);
 }
 
 $database = new Database();
@@ -49,7 +49,7 @@ try {
             $sortOrder = isset($_GET['order']) && strtoupper($_GET['order']) === 'DESC' ? 'DESC' : 'ASC';
             
             // Validate sort field
-            $allowedSortFields = ['display_order', 'name', 'created_at', 'id'];
+            $allowedSortFields = ['display_order', 'name', 'id'];
             if (!in_array($sortBy, $allowedSortFields)) {
                 $sortBy = 'display_order';
             }
@@ -61,10 +61,8 @@ try {
                     name,
                     logo,
                     website,
-                    description,
                     display_order,
-                    is_active,
-                    created_at
+                    is_active
                 FROM clients
                 ORDER BY {$sortBy} {$sortOrder}
             ";
@@ -84,11 +82,11 @@ try {
         
         $query = "
             INSERT INTO clients (
-                name, logo, website, description, 
-                display_order, is_active, created_at
+                name, logo, website, 
+                display_order, is_active
             ) VALUES (
-                :name, :logo, :website, :description,
-                :display_order, :is_active, NOW()
+                :name, :logo, :website,
+                :display_order, :is_active
             )
         ";
         
@@ -96,7 +94,6 @@ try {
             'name' => trim($data['name']),
             'logo' => isset($data['logo']) ? trim($data['logo']) : null,
             'website' => isset($data['website']) ? trim($data['website']) : null,
-            'description' => isset($data['description']) ? trim($data['description']) : null,
             'display_order' => isset($data['display_order']) ? intval($data['display_order']) : 0,
             'is_active' => isset($data['is_active']) ? intval($data['is_active']) : 1
         ];
@@ -127,10 +124,8 @@ try {
                 name = :name,
                 logo = :logo,
                 website = :website,
-                description = :description,
                 display_order = :display_order,
-                is_active = :is_active,
-                updated_at = NOW()
+                is_active = :is_active
             WHERE id = :id
         ";
         
@@ -139,7 +134,6 @@ try {
             'name' => trim($data['name']),
             'logo' => isset($data['logo']) ? trim($data['logo']) : null,
             'website' => isset($data['website']) ? trim($data['website']) : null,
-            'description' => isset($data['description']) ? trim($data['description']) : null,
             'display_order' => isset($data['display_order']) ? intval($data['display_order']) : 0,
             'is_active' => isset($data['is_active']) ? intval($data['is_active']) : 1
         ];
@@ -151,6 +145,29 @@ try {
         } else {
             Response::serverError('Failed to update client');
         }
+    }
+
+    // PATCH - Update display order
+    elseif ($method === 'PATCH') {
+        $input = json_decode(file_get_contents('php://input'), true);
+
+        if (!isset($input['orders']) || !is_array($input['orders'])) {
+            Response::badRequest('Invalid order data');
+        }
+
+        foreach ($input['orders'] as $order) {
+            $id = isset($order['id']) ? intval($order['id']) : 0;
+            $displayOrder = isset($order['display_order']) ? intval($order['display_order']) : 0;
+
+            if ($id > 0) {
+                $database->execute(
+                    'UPDATE clients SET display_order = :display_order WHERE id = :id',
+                    ['display_order' => $displayOrder, 'id' => $id]
+                );
+            }
+        }
+
+        Response::success(['message' => 'Client orders updated successfully']);
     }
     
     // DELETE - Delete client

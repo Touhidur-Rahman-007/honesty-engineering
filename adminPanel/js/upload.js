@@ -59,7 +59,7 @@ const UploadUtils = {
                 <!-- Image Preview -->
                 <div id="${previewId}" class="mt-3 ${currentImage ? '' : 'hidden'}">
                     <div class="relative inline-block group">
-                        <img src="${currentImage}" alt="Preview" class="max-h-40 rounded-lg shadow-md border-2 border-gray-200">
+                        <img src="${ImagePath.resolve(currentImage)}" alt="Preview" class="max-h-40 rounded-lg shadow-md border-2 border-gray-200">
                         <button 
                             type="button" 
                             id="${deleteButtonId}"
@@ -124,7 +124,7 @@ const UploadUtils = {
             // Show preview
             preview.innerHTML = `
                 <div class="relative inline-block group">
-                    <img src="${imageUrl}" alt="Preview" class="max-h-40 rounded-lg shadow-md border-2 border-gray-200">
+                    <img src="${ImagePath.resolve(imageUrl)}" alt="Preview" class="max-h-40 rounded-lg shadow-md border-2 border-gray-200">
                     <button 
                         type="button" 
                         id="${deleteButtonId}"

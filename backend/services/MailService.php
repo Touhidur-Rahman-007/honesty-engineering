@@ -113,21 +113,50 @@ class MailService {
      * @param string $subject Email subject
      * @param string $replyMessage Reply message
      * @param array $originalInquiry Original inquiry data for context
+     * @param array $previousReplies Previous replies for context
+     * @param string|null $attachmentPath Full file path to attachment
+     * @param string|null $attachmentFilename Original filename of attachment
      * @return bool Success status
      */
-    public function sendReplyEmail($toEmail, $toName, $subject, $replyMessage, $originalInquiry = []) {
+    public function sendReplyEmail($toEmail, $toName, $subject, $replyMessage, $originalInquiry = [], $previousReplies = [], $attachmentPath = null, $attachmentFilename = null) {
         try {
-            $body = $this->getReplyTemplate($toName, $replyMessage, $originalInquiry);
+            $body = $this->getReplyTemplate($toName, $replyMessage, $originalInquiry, $previousReplies);
             
             // Plain text alternative
-            $altBody = strip_tags($replyMessage);
+            $altBodyParts = [trim($replyMessage)];
+
+            if (!empty($previousReplies)) {
+                $altBodyParts[] = "";
+                $altBodyParts[] = "Previous replies:";
+                foreach ($previousReplies as $reply) {
+                    $replySender = $reply['sent_by'] ?? 'Admin';
+                    $replySentAt = $reply['sent_at'] ?? '';
+                    $replyMessageText = trim($reply['reply_message'] ?? '');
+                    $altBodyParts[] = "- {$replySender} {$replySentAt}: {$replyMessageText}";
+                }
+            }
+
+            if (!empty($originalInquiry['message'])) {
+                $altBodyParts[] = "";
+                $altBodyParts[] = "Original message:";
+                if (!empty($originalInquiry['subject'])) {
+                    $altBodyParts[] = "Subject: " . $originalInquiry['subject'];
+                }
+                $altBodyParts[] = trim($originalInquiry['message']);
+            }
+
+            $altBody = implode("\n", $altBodyParts);
 
             $result = $this->sendSmtpEmail(
                 $toEmail,
                 $toName,
                 'Re: ' . $subject,
                 $body,
-                $altBody
+                $altBody,
+                null,
+                null,
+                $attachmentPath,
+                $attachmentFilename
             );
             
             return $result;
@@ -141,7 +170,7 @@ class MailService {
     /**
      * Send an email via SMTP without external dependencies
      */
-    private function sendSmtpEmail($toEmail, $toName, $subject, $htmlBody, $textBody, $replyToEmail = null, $replyToName = null) {
+    private function sendSmtpEmail($toEmail, $toName, $subject, $htmlBody, $textBody, $replyToEmail = null, $replyToName = null, $attachmentPath = null, $attachmentFilename = null) {
         $host = $this->config['SMTP_HOST'];
         $port = (int)$this->config['SMTP_PORT'];
         $encryption = strtolower($this->config['SMTP_ENCRYPTION']);
@@ -211,7 +240,7 @@ class MailService {
         $this->sendCommand($fp, 'DATA');
         $this->expectResponse($fp, 354);
 
-        $message = $this->buildMimeMessage($toEmail, $toName, $subject, $htmlBody, $textBody, $fromEmail, $fromName, $replyToEmail, $replyToName);
+        $message = $this->buildMimeMessage($toEmail, $toName, $subject, $htmlBody, $textBody, $fromEmail, $fromName, $replyToEmail, $replyToName, $attachmentPath, $attachmentFilename);
         $this->sendCommand($fp, $message . "\r\n.");
         $this->expectResponse($fp, 250);
 
@@ -222,8 +251,9 @@ class MailService {
         return true;
     }
 
-    private function buildMimeMessage($toEmail, $toName, $subject, $htmlBody, $textBody, $fromEmail, $fromName, $replyToEmail, $replyToName) {
-        $boundary = 'bnd_' . md5(uniqid((string)mt_rand(), true));
+    private function buildMimeMessage($toEmail, $toName, $subject, $htmlBody, $textBody, $fromEmail, $fromName, $replyToEmail, $replyToName, $attachmentPath = null, $attachmentFilename = null) {
+        $boundaryMixed = 'bnd_mixed_' . md5(uniqid((string)mt_rand(), true));
+        $boundaryAlt = 'bnd_alt_' . md5(uniqid((string)mt_rand(), true));
         $encodedSubject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
 
         $fromHeader = $this->formatAddress($fromEmail, $fromName);
@@ -236,23 +266,66 @@ class MailService {
             $headers[] = 'Reply-To: ' . $this->formatAddress($replyToEmail, $replyToName);
         }
         $headers[] = 'MIME-Version: 1.0';
-        $headers[] = 'Content-Type: multipart/alternative; boundary="' . $boundary . '"';
+        
+        // If we have an attachment, use multipart/mixed, otherwise multipart/alternative
+        if ($attachmentPath && file_exists($attachmentPath)) {
+            $headers[] = 'Content-Type: multipart/mixed; boundary="' . $boundaryMixed . '"';
+        } else {
+            $headers[] = 'Content-Type: multipart/alternative; boundary="' . $boundaryAlt . '"';
+        }
+        
         $headers[] = 'Content-Transfer-Encoding: 8bit';
 
         $body = [];
-        $body[] = '--' . $boundary;
+        
+        if ($attachmentPath && file_exists($attachmentPath)) {
+            // Multipart/mixed structure for attachments
+            $body[] = '--' . $boundaryMixed;
+            $body[] = 'Content-Type: multipart/alternative; boundary="' . $boundaryAlt . '"';
+            $body[] = '';
+        }
+        
+        // Text part
+        $body[] = '--' . $boundaryAlt;
         $body[] = 'Content-Type: text/plain; charset=UTF-8';
         $body[] = 'Content-Transfer-Encoding: 8bit';
         $body[] = '';
         $body[] = $textBody;
         $body[] = '';
-        $body[] = '--' . $boundary;
+        
+        // HTML part
+        $body[] = '--' . $boundaryAlt;
         $body[] = 'Content-Type: text/html; charset=UTF-8';
         $body[] = 'Content-Transfer-Encoding: 8bit';
         $body[] = '';
         $body[] = $htmlBody;
         $body[] = '';
-        $body[] = '--' . $boundary . '--';
+        $body[] = '--' . $boundaryAlt . '--';
+        
+        // Add attachment if present
+        if ($attachmentPath && file_exists($attachmentPath)) {
+            $body[] = '';
+            $body[] = '--' . $boundaryMixed;
+            
+            $fileContent = file_get_contents($attachmentPath);
+            $encodedContent = chunk_split(base64_encode($fileContent));
+            
+            // Determine MIME type
+            $mimeType = mime_content_type($attachmentPath);
+            if (!$mimeType) {
+                $mimeType = 'application/octet-stream';
+            }
+            
+            $safeFilename = $attachmentFilename ?: basename($attachmentPath);
+            $encodedFilename = '=?UTF-8?B?' . base64_encode($safeFilename) . '?=';
+            
+            $body[] = 'Content-Type: ' . $mimeType . '; name="' . $encodedFilename . '"';
+            $body[] = 'Content-Transfer-Encoding: base64';
+            $body[] = 'Content-Disposition: attachment; filename="' . $encodedFilename . '"';
+            $body[] = '';
+            $body[] = $encodedContent;
+            $body[] = '--' . $boundaryMixed . '--';
+        }
 
         return 'Subject: ' . $encodedSubject . "\r\n" . implode("\r\n", $headers) . "\r\n\r\n" . implode("\r\n", $body);
     }
@@ -390,11 +463,33 @@ HTML;
      * @param string $name Customer name
      * @param string $replyMessage Reply message
      * @param array $originalInquiry Original inquiry for context
+     * @param array $previousReplies Previous replies for context
      * @return string HTML email body
      */
-    private function getReplyTemplate($name, $replyMessage, $originalInquiry) {
+    private function getReplyTemplate($name, $replyMessage, $originalInquiry, $previousReplies = []) {
         $name = htmlspecialchars($name);
         $message = nl2br(htmlspecialchars($replyMessage));
+
+        $previousRepliesBlock = '';
+        if (!empty($previousReplies)) {
+            $replyItems = [];
+            foreach ($previousReplies as $reply) {
+                $replyMessageText = nl2br(htmlspecialchars($reply['reply_message'] ?? ''));
+                $replySender = htmlspecialchars($reply['sent_by'] ?? 'Admin');
+                $replySentAt = htmlspecialchars($reply['sent_at'] ?? '');
+                $replyItems[] = <<<HTML
+                <div style="margin-top: 12px; padding: 10px; background: #f1f5f9; border-left: 3px solid #94a3b8;">
+                    <p style="margin: 0 0 6px 0; font-size: 12px; color: #475569;"><strong>$replySender</strong> $replySentAt</p>
+                    <div style="font-size: 12px; color: #475569;">$replyMessageText</div>
+                </div>
+HTML;
+            }
+
+            $previousRepliesBlock = "<div style=\"margin-top: 24px; padding-top: 16px; border-top: 2px dashed #cbd5f5;\">" .
+                "<p style=\"color: #64748b; font-size: 12px; font-weight: bold;\">PREVIOUS REPLIES:</p>" .
+                implode("", $replyItems) .
+                "</div>";
+        }
         
         $originalContext = '';
         if (!empty($originalInquiry['message'])) {
@@ -445,6 +540,7 @@ HTML;
             <strong>Honesty Engineering Team</strong></p>
             
             $originalContext
+            $previousRepliesBlock
         </div>
         <div class="footer">
             <p><strong>Honesty Engineering</strong></p>

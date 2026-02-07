@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { 
@@ -11,10 +11,14 @@ import {
   CircuitLines, 
   CircuitCorner 
 } from "@/components/common";
+import { heroAPI, type HeroItem } from "@/lib/api";
 
 export function Hero() {
     const ref = useRef(null);
     const [showPdfModal, setShowPdfModal] = useState(false);
+    const [heroData, setHeroData] = useState<HeroItem | null>(null);
+    const [loading, setLoading] = useState(true);
+    
     const { scrollYProgress } = useScroll({
         target: ref,
         offset: ["start start", "end start"],
@@ -22,6 +26,36 @@ export function Hero() {
 
     const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
     const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+
+    // Fetch hero data from API
+    useEffect(() => {
+        const fetchHeroData = async () => {
+            try {
+                const data = await heroAPI.getAll();
+                // Get the first active hero item
+                const activeHero = data.find(item => item.is_active === 1) || data[0];
+                setHeroData(activeHero);
+            } catch (error) {
+                console.error('Error fetching hero data:', error);
+                // Fallback to default content
+                setHeroData({
+                    id: 1,
+                    title: "HONESTY ENGINEERING",
+                    subtitle: "Your trusted partner for comprehensive engineering solutions since 2018.",
+                    description: "",
+                    image_url: "/assets/images/hero/service-wheel.png",
+                    button_text: "Explore Services",
+                    button_link: "#products",
+                    display_order: 1,
+                    is_active: 1
+                });
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchHeroData();
+    }, []);
 
     return (
         <section
@@ -64,87 +98,95 @@ export function Hero() {
                 <div className="grid lg:grid-cols-2 gap-2 lg:gap-12 items-center max-w-full overflow-hidden">
                     {/* Left Content */}
                     <div className="text-center lg:text-left order-2 lg:order-1 w-full">
-                        {/* Main Heading - Desktop: original sizes, Mobile: smaller */}
-                        <motion.h1
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6, delay: 0.1 }}
-                            className="text-[22px] sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-2 sm:mb-4 leading-tight"
-                            style={{ fontFamily: "'Poppins', sans-serif" }}
-                        >
-                            <AnimatedWords text="HONESTY ENGINEERING" />
-                        </motion.h1>
-
-                        {/* Highlighted Badge - GOVT. APPROVED */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6, delay: 0.2 }}
-                            className="flex justify-center lg:justify-start mb-2 sm:mb-4"
-                        >
-                            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-1.5 sm:py-2.5 rounded-xl bg-gradient-to-r from-accent-400 to-accent-500 text-primary-900 text-[10px] sm:text-sm font-bold shadow-lg">
-                                <span className="text-sm sm:text-lg">🏆</span>
-                                <span className="leading-tight whitespace-nowrap">GOVT. APPROVED 1st CLASS CONTRACTOR</span>
+                        {loading ? (
+                            <div className="flex items-center justify-center lg:justify-start h-96">
+                                <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent"></div>
                             </div>
-                        </motion.div>
+                        ) : (
+                            <>
+                                {/* Main Heading - Desktop: original sizes, Mobile: smaller */}
+                                <motion.h1
+                                    initial={{ opacity: 0, y: 30 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.6, delay: 0.1 }}
+                                    className="text-[22px] sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-2 sm:mb-4 leading-tight"
+                                    style={{ fontFamily: "'Poppins', sans-serif" }}
+                                >
+                                    <AnimatedWords text={heroData?.title || "HONESTY ENGINEERING"} />
+                                </motion.h1>
 
-                        {/* BEPZA Badge - Highlighted */}
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.5, delay: 0.3 }}
-                            className="flex justify-center lg:justify-start mb-3 sm:mb-6"
-                        >
-                            <div className="inline-flex items-center gap-1 sm:gap-2 px-3 sm:px-5 py-1.5 sm:py-2.5 rounded-xl bg-white/25 backdrop-blur-sm border border-white/40 text-white text-[10px] sm:text-sm font-bold shadow-lg">
-                                <span className="text-sm sm:text-lg">⭐</span>
-                                <span className="leading-tight whitespace-nowrap">BEPZA ENLISTED COMPANY</span>
-                            </div>
-                        </motion.div>
+                                {/* Highlighted Badge - GOVT. APPROVED */}
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.6, delay: 0.2 }}
+                                    className="flex justify-center lg:justify-start mb-2 sm:mb-4"
+                                >
+                                    <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-1.5 sm:py-2.5 rounded-xl bg-gradient-to-r from-accent-400 to-accent-500 text-primary-900 text-[10px] sm:text-sm font-bold shadow-lg">
+                                        <span className="text-sm sm:text-lg">🏆</span>
+                                        <span className="leading-tight whitespace-nowrap">GOVT. APPROVED 1st CLASS CONTRACTOR</span>
+                                    </div>
+                                </motion.div>
 
-                        {/* Subtitle */}
-                        <motion.p
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6, delay: 0.4 }}
-                            className="text-[13px] leading-relaxed sm:text-lg md:text-xl text-white/90 mb-4 sm:mb-8 max-w-xl mx-auto lg:mx-0"
-                        >
-                            Your trusted partner for comprehensive engineering solutions since 2018.
-                        </motion.p>
+                                {/* BEPZA Badge - Highlighted */}
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.5, delay: 0.3 }}
+                                    className="flex justify-center lg:justify-start mb-3 sm:mb-6"
+                                >
+                                    <div className="inline-flex items-center gap-1 sm:gap-2 px-3 sm:px-5 py-1.5 sm:py-2.5 rounded-xl bg-white/25 backdrop-blur-sm border border-white/40 text-white text-[10px] sm:text-sm font-bold shadow-lg">
+                                        <span className="text-sm sm:text-lg">⭐</span>
+                                        <span className="leading-tight whitespace-nowrap">BEPZA ENLISTED COMPANY</span>
+                                    </div>
+                                </motion.div>
 
-                        {/* CTA Buttons - Mobile: centered stacked, Desktop: side by side */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6, delay: 0.5 }}
-                            className="flex flex-col sm:flex-row gap-2.5 sm:gap-4 justify-center lg:justify-start items-center w-full max-w-[280px] sm:max-w-none mx-auto lg:mx-0"
-                        >
-                            <Button 
-                                variant="secondary" 
-                                size="lg" 
-                                className="w-full sm:w-auto py-2.5 sm:py-4 text-[13px] sm:text-base font-semibold shadow-lg"
-                                onClick={() => {
-                                    const element = document.getElementById('products');
-                                    if (element) {
-                                        const headerHeight = 80;
-                                        const elementPosition = element.getBoundingClientRect().top + window.pageYOffset - headerHeight;
-                                        window.scrollTo({
-                                            top: elementPosition,
-                                            behavior: 'smooth',
-                                        });
-                                    }
-                                }}
-                            >
-                                Explore Services
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="lg"
-                                className="border-2 border-white text-white hover:bg-white hover:text-primary-600 w-full sm:w-auto py-2.5 sm:py-4 text-[13px] sm:text-base font-semibold backdrop-blur-sm bg-white/15 shadow-lg"
-                                onClick={() => setShowPdfModal(true)}
-                            >
-                                Company Profile
-                            </Button>
-                        </motion.div>
+                                {/* Subtitle */}
+                                <motion.p
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.6, delay: 0.4 }}
+                                    className="text-[13px] leading-relaxed sm:text-lg md:text-xl text-white/90 mb-4 sm:mb-8 max-w-xl mx-auto lg:mx-0"
+                                >
+                                    {heroData?.subtitle || "Your trusted partner for comprehensive engineering solutions since 2018."}
+                                </motion.p>
+
+                                {/* CTA Buttons - Mobile: centered stacked, Desktop: side by side */}
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.6, delay: 0.5 }}
+                                    className="flex flex-col sm:flex-row gap-2.5 sm:gap-4 justify-center lg:justify-start items-center w-full max-w-[280px] sm:max-w-none mx-auto lg:mx-0"
+                                >
+                                    <Button 
+                                        variant="secondary" 
+                                        size="lg" 
+                                        className="w-full sm:w-auto py-2.5 sm:py-4 text-[13px] sm:text-base font-semibold shadow-lg"
+                                        onClick={() => {
+                                            const element = document.getElementById(heroData?.button_link?.replace('#', '') || 'products');
+                                            if (element) {
+                                                const headerHeight = 80;
+                                                const elementPosition = element.getBoundingClientRect().top + window.pageYOffset - headerHeight;
+                                                window.scrollTo({
+                                                    top: elementPosition,
+                                                    behavior: 'smooth',
+                                                });
+                                            }
+                                        }}
+                                    >
+                                        {heroData?.button_text || "Explore Services"}
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="lg"
+                                        className="border-2 border-white text-white hover:bg-white hover:text-primary-600 w-full sm:w-auto py-2.5 sm:py-4 text-[13px] sm:text-base font-semibold backdrop-blur-sm bg-white/15 shadow-lg"
+                                        onClick={() => setShowPdfModal(true)}
+                                    >
+                                        Company Profile
+                                    </Button>
+                                </motion.div>
+                            </>
+                        )}
                     </div>
 
                     {/* Right Content - Service Image */}
@@ -162,7 +204,7 @@ export function Hero() {
                             {/* Service Wheel Image */}
                             <div className="relative w-full h-full rounded-full overflow-hidden border-4 border-white/30 shadow-2xl">
                                 <Image
-                                    src="/assets/images/hero/service-wheel.png"
+                                    src={heroData?.image_url || "/assets/images/hero/service-wheel.png"}
                                     alt="Honesty Engineering Services"
                                     fill
                                     className="object-cover"

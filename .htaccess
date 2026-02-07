@@ -33,6 +33,9 @@ RewriteBase /
 # ============================================================================
 # URL HANDLING FOR STATIC EXPORT
 # ============================================================================
+# Serve uploaded files from public/uploads/
+RewriteRule ^uploads/(.*)$ public/uploads/$1 [L,QSA]
+
 # Trailing slash handling
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

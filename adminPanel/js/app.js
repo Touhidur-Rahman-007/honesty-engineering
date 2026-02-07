@@ -705,7 +705,7 @@ function showHeroForm(hero = null) {
                 urlInput.value = hero.background_image;
                 previewContainer.innerHTML = `
                     <div class="relative inline-block">
-                        <img src="${hero.background_image}" alt="Current image" class="w-32 h-32 object-cover rounded-lg border">
+                        <img src="${ImagePath.resolve(hero.background_image)}" alt="Current image" class="w-32 h-32 object-cover rounded-lg border">
                         <button type="button" onclick="UploadUtils.removeImage('background_image_preview', 'background_image')" 
                             class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600">
                             <i class="fas fa-times text-xs"></i>
@@ -878,8 +878,6 @@ async function loadServicesSection() {
                             <option value="display_order_ASC" ${sortBy === 'display_order' && sortOrder === 'ASC' ? 'selected' : ''}>Order (Default)</option>
                             <option value="title_ASC" ${sortBy === 'title' && sortOrder === 'ASC' ? 'selected' : ''}>Name (A-Z)</option>
                             <option value="title_DESC" ${sortBy === 'title' && sortOrder === 'DESC' ? 'selected' : ''}>Name (Z-A)</option>
-                            <option value="created_at_DESC" ${sortBy === 'created_at' && sortOrder === 'DESC' ? 'selected' : ''}>Newest First</option>
-                            <option value="created_at_ASC" ${sortBy === 'created_at' && sortOrder === 'ASC' ? 'selected' : ''}>Oldest First</option>
                         </select>
                         <button onclick="showServiceForm()" class="px-5 py-2.5 text-white rounded-xl font-semibold transition-all shadow-lg" style="background: linear-gradient(135deg, #8bc34a 0%, #689f38 100%);" onmouseover="this.style.background='linear-gradient(135deg, #9ccc65 0%, #7cb342 100%)';" onmouseout="this.style.background='linear-gradient(135deg, #8bc34a 0%, #689f38 100%);'">
                             <i class="fas fa-plus mr-2"></i>Add Service
@@ -889,17 +887,22 @@ async function loadServicesSection() {
                 
                 <div class="mb-4 text-sm text-gray-600">
                     Showing ${services.length} of ${allServices.length} service${services.length !== 1 ? 's' : ''}
+                    ${selectedCategory !== 'all' ? '<span class="ml-2 text-blue-600">• Drag to reorder services in this category</span>' : ''}
                 </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    ${services.map(service => `
-                        <div class="border rounded-lg p-4 hover:shadow-lg transition-shadow">
+                <div id="servicesList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    ${services.map((service, index) => `
+                        <div class="service-item border rounded-lg p-4 hover:shadow-lg transition-shadow bg-white cursor-move" data-id="${service.id}" data-order="${service.display_order || index}">
                             <div class="flex items-start justify-between mb-3">
                                 <div class="flex items-start gap-3 flex-1">
+                                    <div class="drag-handle text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing">
+                                        <i class="fas fa-grip-vertical text-lg"></i>
+                                    </div>
                                     <div class="text-2xl text-green-600">${service.icon || '❖'}</div>
                                     <div class="flex-1">
                                         <h3 class="font-semibold text-gray-800">${service.title}</h3>
                                         <p class="text-xs text-gray-500 mt-1">${service.category_name || 'Uncategorized'}</p>
+                                        <span class="inline-block mt-1 px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">Order: ${service.display_order || index}</span>
                                     </div>
                                 </div>
                                 <div class="flex gap-1">
@@ -959,10 +962,83 @@ async function loadServicesSection() {
         
         // Setup form submission
         document.getElementById('serviceForm').addEventListener('submit', handleServiceSubmit);
+        
+        // Initialize drag and drop for services
+        initializeServicesDragDrop();
     } catch (error) {
         Utils.showToast('Failed to load services', 'error');
     } finally {
         Utils.hideLoader();
+    }
+}
+
+function initializeServicesDragDrop() {
+    const servicesList = document.getElementById('servicesList');
+    if (!servicesList) return;
+    
+    let draggedElement = null;
+    let placeholder = null;
+    
+    const items = servicesList.querySelectorAll('.service-item');
+    
+    items.forEach(item => {
+        item.setAttribute('draggable', 'true');
+        
+        item.addEventListener('dragstart', (e) => {
+            draggedElement = item;
+            item.classList.add('opacity-50');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+        
+        item.addEventListener('dragend', (e) => {
+            item.classList.remove('opacity-50');
+            if (placeholder && placeholder.parentNode) {
+                placeholder.parentNode.removeChild(placeholder);
+            }
+            placeholder = null;
+            
+            // Save new order
+            saveServicesOrder();
+        });
+        
+        item.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            
+            if (draggedElement !== item) {
+                const rect = item.getBoundingClientRect();
+                const midpoint = rect.top + rect.height / 2;
+                
+                if (e.clientY < midpoint) {
+                    item.parentNode.insertBefore(draggedElement, item);
+                } else {
+                    item.parentNode.insertBefore(draggedElement, item.nextSibling);
+                }
+            }
+        });
+    });
+}
+
+async function saveServicesOrder() {
+    const servicesList = document.getElementById('servicesList');
+    if (!servicesList) return;
+    
+    const items = servicesList.querySelectorAll('.service-item');
+    const orders = [];
+    
+    items.forEach((item, index) => {
+        orders.push({
+            id: parseInt(item.dataset.id),
+            display_order: index + 1
+        });
+    });
+    
+    try {
+        await API.updateServiceOrder(orders);
+        Utils.showToast('Service order updated successfully');
+    } catch (error) {
+        console.error('Failed to update order:', error);
+        Utils.showToast('Failed to update service order', 'error');
     }
 }
 
@@ -1123,7 +1199,7 @@ async function loadProductsSection() {
                     ${products.length === 0 ? '<p class="col-span-full text-center text-gray-500 py-8">No products found. Click "Add Product" to create one.</p>' : 
                     products.map(product => `
                         <div class="border rounded-lg p-4 hover:shadow-lg transition-shadow">
-                            ${product.image ? `<img src="${product.image}" alt="${product.name}" class="w-full h-32 object-cover rounded mb-3">` : ''}
+                            ${product.image ? `<img src="${ImagePath.resolve(product.image)}" alt="${product.name}" class="w-full h-48 object-cover rounded mb-3">` : ''}
                             <div class="flex items-start justify-between mb-3">
                                 <div class="flex-1">
                                     <h3 class="font-semibold text-gray-800">${product.name}</h3>
@@ -1218,7 +1294,7 @@ function showProductForm(product = null) {
                 if (preview) {
                     preview.innerHTML = `
                         <div class="relative inline-block group">
-                            <img src="${product.image}" alt="Preview" class="max-h-40 rounded-lg shadow-md border-2 border-gray-200">
+                            <img src="${ImagePath.resolve(product.image)}" alt="Preview" class="max-h-40 rounded-lg shadow-md border-2 border-gray-200">
                             <button type="button" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-600"
                                 onclick="UploadUtils.removeImage('${previewId}', '${imageInput.id}', 'delete-image')">
                                 <i class="fas fa-times"></i>
@@ -1330,8 +1406,6 @@ async function loadClientsSection() {
                             <option value="display_order_ASC" ${sortBy === 'display_order' && sortOrder === 'ASC' ? 'selected' : ''}>Order (Default)</option>
                             <option value="name_ASC" ${sortBy === 'name' && sortOrder === 'ASC' ? 'selected' : ''}>Name (A-Z)</option>
                             <option value="name_DESC" ${sortBy === 'name' && sortOrder === 'DESC' ? 'selected' : ''}>Name (Z-A)</option>
-                            <option value="created_at_DESC" ${sortBy === 'created_at' && sortOrder === 'DESC' ? 'selected' : ''}>Newest First</option>
-                            <option value="created_at_ASC" ${sortBy === 'created_at' && sortOrder === 'ASC' ? 'selected' : ''}>Oldest First</option>
                         </select>
                         <button onclick="showClientForm()" class="px-5 py-2.5 text-white rounded-xl font-semibold transition-all shadow-lg" style="background: linear-gradient(135deg, #8bc34a 0%, #689f38 100%);" onmouseover="this.style.background='linear-gradient(135deg, #9ccc65 0%, #7cb342 100%)';" onmouseout="this.style.background='linear-gradient(135deg, #8bc34a 0%, #689f38 100%);'">
                             <i class="fas fa-plus mr-2"></i>Add Client
@@ -1341,26 +1415,34 @@ async function loadClientsSection() {
                 
                 <div class="mb-4 text-sm text-gray-600">
                     Showing ${clients.length} client${clients.length !== 1 ? 's' : ''}
+                    ${clients.length > 1 ? '<span class="ml-2 text-blue-600">• Drag to reorder</span>' : ''}
                 </div>
                 
-                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                    ${clients.map(client => `
-                        <div class="border rounded-lg p-4 text-center hover:shadow-lg transition-shadow relative group">
-                            ${client.logo ? `<img src="${client.logo}" alt="${client.name}" class="w-20 h-20 object-contain mx-auto mb-2">` : 
-                            `<div class="w-20 h-20 bg-gray-200 rounded mx-auto mb-2 flex items-center justify-center">
-                                <i class="fas fa-building text-gray-400 text-2xl"></i>
-                            </div>`}
-                            <p class="text-sm font-medium text-gray-800">${client.name}</p>
-                            <div class="absolute top-2 right-2 hidden group-hover:flex gap-1">
-                                <button onclick="editClient(${client.id})" class="p-1 text-white rounded text-xs transition-all" style="background: linear-gradient(135deg, #8bc34a 0%, #7cb342 100%);" onmouseover="this.style.background='linear-gradient(135deg, #9ccc65 0%, #8bc34a 100%)';" onmouseout="this.style.background='linear-gradient(135deg, #8bc34a 0%, #7cb342 100%);'">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button onclick="deleteClient(${client.id})" class="p-1 bg-red-500 text-white rounded text-xs">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                <div id="clientsGrid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    ${clients.length === 0 ? 
+                        '<p class="col-span-full text-center text-gray-500 py-8">No clients found. Click "Add Client" to create one.</p>' 
+                        : 
+                        clients.map(client => `
+                            <div class="client-item border rounded-lg p-4 text-center hover:shadow-lg transition-shadow relative group cursor-move" data-id="${client.id}">
+                                <div class="absolute top-2 left-2 text-gray-300 group-hover:text-gray-500">
+                                    <i class="fas fa-grip-vertical text-sm"></i>
+                                </div>
+                                ${client.logo ? `<img src="${ImagePath.resolve(client.logo)}" alt="${client.name}" class="w-20 h-20 object-contain mx-auto mb-2">` : 
+                                `<div class="w-20 h-20 bg-gray-200 rounded mx-auto mb-2 flex items-center justify-center">
+                                    <i class="fas fa-building text-gray-400 text-2xl"></i>
+                                </div>`}
+                                <p class="text-sm font-medium text-gray-800">${client.name}</p>
+                                <div class="absolute top-2 right-2 hidden group-hover:flex gap-1">
+                                    <button onclick="editClient(${client.id})" class="p-1 text-white rounded text-xs transition-all" style="background: linear-gradient(135deg, #8bc34a 0%, #7cb342 100%);" onmouseover="this.style.background='linear-gradient(135deg, #9ccc65 0%, #8bc34a 100%)';" onmouseout="this.style.background='linear-gradient(135deg, #8bc34a 0%, #7cb342 100%);'">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button onclick="deleteClient(${client.id})" class="p-1 bg-red-500 text-white rounded text-xs">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    `).join('')}
+                        `).join('')
+                    }
                 </div>
             </div>
             
@@ -1398,7 +1480,9 @@ async function loadClientsSection() {
         `;
         
         document.getElementById('clientForm').addEventListener('submit', handleClientSubmit);
+        initializeClientsDragDrop();
     } catch (error) {
+        console.error('Clients error:', error);
         Utils.showToast('Failed to load clients', 'error');
     } finally {
         Utils.hideLoader();
@@ -1424,7 +1508,7 @@ function showClientForm(client = null) {
                 if (preview) {
                     preview.innerHTML = `
                         <div class="relative inline-block group">
-                            <img src="${client.logo}" alt="Preview" class="max-h-40 rounded-lg shadow-md border-2 border-gray-200">
+                            <img src="${ImagePath.resolve(client.logo)}" alt="Preview" class="max-h-40 rounded-lg shadow-md border-2 border-gray-200">
                             <button type="button" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-600"
                                 onclick="UploadUtils.removeImage('${previewId}', '${logoInput.id}', 'delete-logo')">
                                 <i class="fas fa-times"></i>
@@ -1450,6 +1534,68 @@ function showClientForm(client = null) {
 
 function closeClientForm() {
     document.getElementById('clientFormModal').classList.add('hidden');
+}
+
+function initializeClientsDragDrop() {
+    const clientsGrid = document.getElementById('clientsGrid');
+    if (!clientsGrid) return;
+
+    let draggedElement = null;
+    const items = clientsGrid.querySelectorAll('.client-item');
+
+    items.forEach(item => {
+        item.setAttribute('draggable', 'true');
+
+        item.addEventListener('dragstart', (e) => {
+            draggedElement = item;
+            item.classList.add('opacity-50');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+
+        item.addEventListener('dragend', () => {
+            item.classList.remove('opacity-50');
+            saveClientsOrder();
+        });
+
+        item.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+
+            if (draggedElement !== item) {
+                const rect = item.getBoundingClientRect();
+                const midpoint = rect.top + rect.height / 2;
+
+                if (e.clientY < midpoint) {
+                    item.parentNode.insertBefore(draggedElement, item);
+                } else {
+                    item.parentNode.insertBefore(draggedElement, item.nextSibling);
+                }
+            }
+        });
+    });
+}
+
+async function saveClientsOrder() {
+    const clientsGrid = document.getElementById('clientsGrid');
+    if (!clientsGrid) return;
+
+    const items = clientsGrid.querySelectorAll('.client-item');
+    const orders = [];
+
+    items.forEach((item, index) => {
+        orders.push({
+            id: parseInt(item.dataset.id, 10),
+            display_order: index + 1
+        });
+    });
+
+    try {
+        await API.updateClientOrder(orders);
+        Utils.showToast('Client order updated successfully');
+    } catch (error) {
+        console.error('Failed to update client order:', error);
+        Utils.showToast('Failed to update client order', 'error');
+    }
 }
 
 async function handleClientSubmit(e) {
@@ -1510,8 +1656,51 @@ async function deleteClient(id) {
 async function loadContactInquiries(filterStatus = '') {
     Utils.showLoader();
     try {
-        const response = await API.getContactInquiries({ page: 1, limit: 100, status: filterStatus });
-        const inquiries = response.data?.items || [];
+        const storedSearch = localStorage.getItem('contact_search') || '';
+        const storedSort = localStorage.getItem('contact_sort') || 'created_at_DESC';
+        const apiStatus = filterStatus === 'all' ? '' : filterStatus;
+        const response = await API.getContactInquiries({ page: 1, limit: 100, status: apiStatus });
+        let inquiries = response.data?.items || [];
+
+        if (filterStatus === '') {
+            inquiries = inquiries.filter(inquiry => (inquiry.status || 'new') !== 'archived');
+        }
+
+        if (filterStatus === 'sent') {
+            inquiries = inquiries.filter(inquiry => (inquiry.reply_count || 0) > 0);
+        }
+
+        if (storedSearch.trim()) {
+            const term = storedSearch.trim().toLowerCase();
+            inquiries = inquiries.filter(inquiry => {
+                const haystack = [
+                    inquiry.name,
+                    inquiry.email,
+                    inquiry.phone,
+                    inquiry.subject,
+                    inquiry.message
+                ].join(' ').toLowerCase();
+                return haystack.includes(term);
+            });
+        }
+
+        const [sortField, sortDir] = storedSort.split('_');
+        inquiries.sort((a, b) => {
+            let left = a[sortField];
+            let right = b[sortField];
+
+            if (sortField === 'created_at') {
+                left = new Date(left || 0).getTime();
+                right = new Date(right || 0).getTime();
+                return sortDir === 'ASC' ? left - right : right - left;
+            }
+
+            left = (left || '').toString().toLowerCase();
+            right = (right || '').toString().toLowerCase();
+            if (left === right) return 0;
+            const comparison = left.localeCompare(right);
+            return sortDir === 'ASC' ? comparison : -comparison;
+        });
         
         const statusColors = {
             'new': 'bg-blue-100 text-blue-800',
@@ -1524,13 +1713,29 @@ async function loadContactInquiries(filterStatus = '') {
             <div class="bg-white p-6 rounded-lg shadow">
                 <div class="flex items-center justify-between mb-6">
                     <h2 class="text-xl font-bold text-gray-800">Contact Inquiries</h2>
-                    <div class="flex gap-2">
+                    <div class="flex flex-wrap gap-2">
+                        <input
+                            type="text"
+                            placeholder="Search name, email, subject..."
+                            value="${storedSearch}"
+                            oninput="setContactSearch(this.value)"
+                            class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                        >
                         <select id="statusFilter" onchange="loadContactInquiries(this.value)" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500">
-                            <option value="">All Status</option>
+                            <option value="" ${filterStatus === '' ? 'selected' : ''}>Active</option>
                             <option value="new" ${filterStatus === 'new' ? 'selected' : ''}>New</option>
                             <option value="read" ${filterStatus === 'read' ? 'selected' : ''}>Read</option>
                             <option value="replied" ${filterStatus === 'replied' ? 'selected' : ''}>Replied</option>
                             <option value="archived" ${filterStatus === 'archived' ? 'selected' : ''}>Archived</option>
+                            <option value="all" ${filterStatus === 'all' ? 'selected' : ''}>All</option>
+                        </select>
+                        <select id="contactSort" onchange="setContactSort(this.value)" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500">
+                            <option value="created_at_DESC" ${storedSort === 'created_at_DESC' ? 'selected' : ''}>Newest First</option>
+                            <option value="created_at_ASC" ${storedSort === 'created_at_ASC' ? 'selected' : ''}>Oldest First</option>
+                            <option value="email_ASC" ${storedSort === 'email_ASC' ? 'selected' : ''}>Email (A-Z)</option>
+                            <option value="email_DESC" ${storedSort === 'email_DESC' ? 'selected' : ''}>Email (Z-A)</option>
+                            <option value="subject_ASC" ${storedSort === 'subject_ASC' ? 'selected' : ''}>Subject (A-Z)</option>
+                            <option value="subject_DESC" ${storedSort === 'subject_DESC' ? 'selected' : ''}>Subject (Z-A)</option>
                         </select>
                     </div>
                 </div>
@@ -1545,6 +1750,7 @@ async function loadContactInquiries(filterStatus = '') {
                                         <h3 class="font-semibold text-gray-800">${inquiry.name}</h3>
                                         <span class="text-xs px-2 py-1 ${statusColors[inquiry.status] || 'bg-gray-100 text-gray-800'} rounded capitalize">${inquiry.status || 'new'}</span>
                                         ${inquiry.subject ? `<span class="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded">${inquiry.subject}</span>` : ''}
+                                        ${(inquiry.reply_count || 0) > 0 ? `<span class="text-xs px-2 py-1 bg-indigo-100 text-indigo-800 rounded">Replies: ${inquiry.reply_count}</span>` : ''}
                                     </div>
                                     <div class="text-sm text-gray-600 space-y-1">
                                         <p><i class="fas fa-envelope mr-2"></i>${inquiry.email}</p>
@@ -1562,9 +1768,20 @@ async function loadContactInquiries(filterStatus = '') {
                                     <button onclick="replyToInquiry(${inquiry.id})" class="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm">
                                         <i class="fas fa-reply mr-1"></i>Reply
                                     </button>
-                                    <button onclick="archiveInquiry(${inquiry.id})" class="px-3 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm">
-                                        <i class="fas fa-archive mr-1"></i>Archive
-                                    </button>
+                                    ${(inquiry.reply_count || 0) > 0 ? `
+                                        <button onclick="viewReplies(${inquiry.id})" class="px-3 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 text-sm">
+                                            <i class="fas fa-comments mr-1"></i>View Replies (${inquiry.reply_count})
+                                        </button>
+                                    ` : ''}
+                                    ${inquiry.status === 'archived' ? `
+                                        <button onclick="unarchiveInquiry(${inquiry.id})" class="px-3 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600 text-sm">
+                                            <i class="fas fa-undo mr-1"></i>Unarchive
+                                        </button>
+                                    ` : `
+                                        <button onclick="archiveInquiry(${inquiry.id})" class="px-3 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm">
+                                            <i class="fas fa-archive mr-1"></i>Archive
+                                        </button>
+                                    `}
                                     <button onclick="deleteInquiry(${inquiry.id})" class="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm">
                                         <i class="fas fa-trash mr-1"></i>Delete
                                     </button>
@@ -1604,6 +1821,11 @@ async function loadContactInquiries(filterStatus = '') {
                             <label class="block text-sm font-medium mb-2">Your Reply</label>
                             <textarea id="replyMessage" rows="6" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500" placeholder="Type your reply here..."></textarea>
                         </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Attachment (Optional, Max 10MB)</label>
+                            <input type="file" id="replyAttachment" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500" accept="*/*">
+                            <p class="text-xs text-gray-500 mt-1">Supported: Documents, Images, PDFs (Max 10MB)</p>
+                        </div>
                         <div class="flex gap-3">
                             <button type="submit" class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600">
                                 <i class="fas fa-paper-plane mr-2"></i>Send Reply
@@ -1613,6 +1835,19 @@ async function loadContactInquiries(filterStatus = '') {
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+            
+            <!-- View Replies Modal -->
+            <div id="viewRepliesModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div class="bg-white rounded-lg p-6 max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-bold">Sent Replies</h3>
+                        <button onclick="closeRepliesModal()" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <div id="repliesListContent"></div>
                 </div>
             </div>
         `;
@@ -1687,9 +1922,22 @@ async function viewInquiry(id) {
                                 <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
                                     <div class="flex items-center justify-between mb-2">
                                         <span class="text-xs font-semibold text-blue-800">${reply.sent_by}</span>
-                                        <span class="text-xs text-gray-500">${Utils.formatDate(reply.sent_at)}</span>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xs text-gray-500">${Utils.formatDate(reply.sent_at)}</span>
+                                            <button onclick="deleteReply(${reply.id}, ${inquiry.id}); closeViewModal();" class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                     <p class="text-gray-700 whitespace-pre-wrap text-sm">${reply.reply_message}</p>
+                                    ${reply.attachment_filename ? `
+                                        <div class="mt-2 p-2 bg-white rounded border border-blue-200">
+                                            <i class="fas fa-paperclip text-blue-600 mr-2"></i>
+                                            <a href="${ImagePath.resolve(reply.attachment_path)}" target="_blank" class="text-blue-600 hover:underline text-sm">
+                                                ${reply.attachment_filename}
+                                            </a>
+                                        </div>
+                                    ` : ''}
                                 </div>
                             `).join('')}
                         </div>
@@ -1700,9 +1948,15 @@ async function viewInquiry(id) {
                     <button onclick="replyToInquiry(${inquiry.id}); closeViewModal();" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
                         <i class="fas fa-reply mr-2"></i>Reply
                     </button>
-                    <button onclick="archiveInquiry(${inquiry.id}); closeViewModal();" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
-                        <i class="fas fa-archive mr-2"></i>Archive
-                    </button>
+                    ${inquiry.status === 'archived' ? `
+                        <button onclick="unarchiveInquiry(${inquiry.id}); closeViewModal();" class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600">
+                            <i class="fas fa-undo mr-2"></i>Unarchive
+                        </button>
+                    ` : `
+                        <button onclick="archiveInquiry(${inquiry.id}); closeViewModal();" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
+                            <i class="fas fa-archive mr-2"></i>Archive
+                        </button>
+                    `}
                     <button onclick="deleteInquiry(${inquiry.id}); closeViewModal();" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
                         <i class="fas fa-trash mr-2"></i>Delete
                     </button>
@@ -1749,6 +2003,92 @@ async function replyToInquiry(id) {
 function closeReplyModal() {
     document.getElementById('replyInquiryModal').classList.add('hidden');
     document.getElementById('replyMessage').value = '';
+    document.getElementById('replyAttachment').value = '';
+}
+
+async function viewReplies(id) {
+    Utils.showLoader();
+    try {
+        const response = await API.getContactInquiry(id);
+        const inquiry = response.data;
+        
+        if (!inquiry.replies || inquiry.replies.length === 0) {
+            Utils.showToast('No replies found', 'error');
+            Utils.hideLoader();
+            return;
+        }
+        
+        document.getElementById('repliesListContent').innerHTML = `
+            <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                <h4 class="font-semibold text-lg mb-2">${inquiry.name}</h4>
+                <p class="text-sm text-gray-600"><i class="fas fa-envelope mr-2"></i>${inquiry.email}</p>
+                <p class="text-sm text-gray-600 mt-2"><strong>Subject:</strong> ${inquiry.subject || 'No subject'}</p>
+            </div>
+            
+            <div class="space-y-4">
+                <h5 class="font-semibold text-gray-700">All Sent Replies (${inquiry.replies.length})</h5>
+                ${inquiry.replies.map((reply, index) => `
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+                        <div class="flex items-center justify-between mb-2">
+                            <div>
+                                <span class="text-xs font-semibold text-blue-800">Reply #${index + 1} by ${reply.sent_by}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-gray-500">${Utils.formatDate(reply.sent_at)}</span>
+                                <button onclick="deleteReply(${reply.id}, ${inquiry.id})" class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <p class="text-gray-700 whitespace-pre-wrap text-sm mb-2">${reply.reply_message}</p>
+                        ${reply.attachment_filename ? `
+                            <div class="mt-2 p-2 bg-white rounded border border-blue-200">
+                                <i class="fas fa-paperclip text-blue-600 mr-2"></i>
+                                <a href="${ImagePath.resolve(reply.attachment_path)}" target="_blank" class="text-blue-600 hover:underline text-sm">
+                                    ${reply.attachment_filename} (${formatFileSize(reply.attachment_size)})
+                                </a>
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        
+        document.getElementById('viewRepliesModal').classList.remove('hidden');
+    } catch (error) {
+        Utils.showToast('Failed to load replies', 'error');
+    } finally {
+        Utils.hideLoader();
+    }
+}
+
+function closeRepliesModal() {
+    document.getElementById('viewRepliesModal').classList.add('hidden');
+}
+
+async function deleteReply(replyId, inquiryId) {
+    const confirmed = await Utils.confirmDelete('This reply and its attachment (if any) will be permanently deleted.', 'Delete Reply?');
+    if (!confirmed) return;
+    
+    Utils.showLoader();
+    try {
+        await API.deleteReply(replyId);
+        Utils.showToast('Reply deleted successfully');
+        closeRepliesModal();
+        loadContactInquiries();
+    } catch (error) {
+        console.error('Delete reply error:', error);
+        Utils.showToast('Failed to delete reply', 'error');
+        Utils.hideLoader();
+    }
+}
+
+function formatFileSize(bytes) {
+    if (!bytes) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
 }
 
 async function handleReplySubmit(e) {
@@ -1756,15 +2096,23 @@ async function handleReplySubmit(e) {
     
     const inquiryId = document.getElementById('replyInquiryId').value;
     const replyMessage = document.getElementById('replyMessage').value.trim();
+    const attachmentInput = document.getElementById('replyAttachment');
+    const attachment = attachmentInput.files[0];
     
     if (!replyMessage) {
         Utils.showToast('Please enter a reply message', 'error');
         return;
     }
     
+    // Check file size (10MB limit)
+    if (attachment && attachment.size > 10 * 1024 * 1024) {
+        Utils.showToast('File size exceeds 10MB limit', 'error');
+        return;
+    }
+    
     Utils.showLoader();
     try {
-        await API.replyInquiry(inquiryId, replyMessage);
+        await API.replyInquiry(inquiryId, replyMessage, attachment);
         Utils.showToast('Reply sent successfully');
         closeReplyModal();
         loadContactInquiries();
@@ -1780,9 +2128,24 @@ async function archiveInquiry(id) {
     try {
         await API.archiveInquiry(id);
         Utils.showToast('Inquiry archived successfully');
-        loadContactInquiries();
+        const filter = document.getElementById('statusFilter')?.value || '';
+        loadContactInquiries(filter);
     } catch (error) {
         Utils.showToast('Failed to archive inquiry', 'error');
+    } finally {
+        Utils.hideLoader();
+    }
+}
+
+async function unarchiveInquiry(id) {
+    Utils.showLoader();
+    try {
+        await API.unarchiveInquiry(id);
+        Utils.showToast('Inquiry unarchived successfully');
+        const filter = document.getElementById('statusFilter')?.value || '';
+        loadContactInquiries(filter);
+    } catch (error) {
+        Utils.showToast('Failed to unarchive inquiry', 'error');
     } finally {
         Utils.hideLoader();
     }
@@ -2019,7 +2382,7 @@ async function loadProjectsSection() {
                     projects.map(project => `
                         <div class="card group relative overflow-hidden border-2 border-gray-100 hover:border-green-500 transition-all duration-300">
                             ${project.featured_image ? `
-                                <img src="${project.featured_image}" alt="${project.title}" class="w-full h-48 object-cover">
+                                <img src="${ImagePath.resolve(project.featured_image)}" alt="${project.title}" class="w-full h-48 object-cover">
                             ` : `
                                 <div class="w-full h-48 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
                                     <i class="fas fa-image text-gray-400 text-4xl"></i>
@@ -2240,7 +2603,7 @@ async function loadGallerySection() {
                     ${images.length === 0 ? '<p class="text-gray-500 text-center col-span-full py-8">No images in gallery yet</p>' :
                     images.map(image => `
                         <div class="gallery-item group relative overflow-hidden rounded-xl border-2 border-gray-100 hover:border-green-500 transition-all duration-300" data-category="${image.category_slug}">
-                            <img src="${image.image_path}" alt="${image.title || 'Gallery'}" class="w-full h-48 object-cover">
+                            <img src="${ImagePath.resolve(image.image_path)}" alt="${image.title || 'Gallery'}" class="w-full h-48 object-cover">
                             <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                 <div class="absolute bottom-0 left-0 right-0 p-3">
                                     <p class="text-white font-semibold text-sm mb-1">${image.title || 'Untitled'}</p>
@@ -2454,6 +2817,18 @@ function sortClients(value) {
     localStorage.setItem('clients_sort', sortBy);
     localStorage.setItem('clients_order', sortOrder);
     loadClientsSection();
+}
+
+function setContactSearch(value) {
+    localStorage.setItem('contact_search', value);
+    const filter = document.getElementById('statusFilter')?.value || '';
+    loadContactInquiries(filter);
+}
+
+function setContactSort(value) {
+    localStorage.setItem('contact_sort', value);
+    const filter = document.getElementById('statusFilter')?.value || '';
+    loadContactInquiries(filter);
 }
 
 // Initialize app

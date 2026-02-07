@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { 
   SectionTitle, 
@@ -10,8 +11,38 @@ import {
   CircuitCorner, 
   GradientCard 
 } from "@/components/common";
+import { aboutAPI, type AboutData } from "@/lib/api";
 
 export function About() {
+    const [aboutData, setAboutData] = useState<AboutData | null>(null);
+    const [loading, setLoading] = useState(true);
+    
+    useEffect(() => {
+        const fetchAboutData = async () => {
+            try {
+                const data = await aboutAPI.get();
+                setAboutData(data);
+            } catch (error) {
+                console.error('Error fetching about data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchAboutData();
+    }, []);
+
+    if (loading) {
+        return (
+            <section id="about" className="relative py-8 sm:py-12 bg-white overflow-hidden">
+                <div className="container mx-auto px-4">
+                    <div className="flex items-center justify-center h-96">
+                        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent"></div>
+                    </div>
+                </div>
+            </section>
+        );
+    }
     return (
         <section id="about" className="relative py-8 sm:py-12 bg-white overflow-hidden">
             {/* Decorative elements - hidden on mobile */}
@@ -25,8 +56,8 @@ export function About() {
 
             <div className="container mx-auto px-4 relative z-10">
                 <SectionTitle
-                    subtitle="Who We Are"
-                    title="About Company"
+                    subtitle={aboutData?.about?.subtitle || "Who We Are"}
+                    title={aboutData?.about?.title || "About Company"}
                     highlight="Company"
                     align="center"
                 />
@@ -35,40 +66,46 @@ export function About() {
                     {/* Left Content */}
                     <AnimatedSection direction="left">
                         <div className="space-y-3 sm:space-y-4 text-primary-700 leading-relaxed text-sm sm:text-base">
-                            <p>
-                                <strong className="text-primary-800">Honesty Engineering Consultancy</strong> is a multidisciplinary firm established in <span className="font-semibold text-secondary-600">2018</span>, based in <span className="font-semibold">Bangladesh</span>.
-                            </p>
+                            {aboutData?.about?.description ? (
+                                <div dangerouslySetInnerHTML={{ __html: aboutData.about.description }} />
+                            ) : (
+                                <>
+                                    <p>
+                                        <strong className="text-primary-800">Honesty Engineering Consultancy</strong> is a multidisciplinary firm established in <span className="font-semibold text-secondary-600">2018</span>, based in <span className="font-semibold">Bangladesh</span>.
+                                    </p>
 
-                            <p>
-                                We provide comprehensive services across:
-                            </p>
+                                    <p>
+                                        We provide comprehensive services across:
+                                    </p>
 
-                            <div className="grid grid-cols-2 gap-3">
-                                {[
-                                    "Electrical Safety",
-                                    "Fire Safety",
-                                    "Building Safety",
-                                    "Sustainable Development",
-                                    "Automation",
-                                    "Construction Solutions",
-                                ].map((item, index) => (
-                                    <motion.div
-                                        key={item}
-                                        initial={{ opacity: 0, x: -20 }}
-                                        whileInView={{ opacity: 1, x: 0 }}
-                                        viewport={{ once: true }}
-                                        transition={{ duration: 0.3, delay: index * 0.05 }}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <span className="w-2 h-2 rounded-full bg-primary-500" />
-                                        <span className="text-sm">{item}</span>
-                                    </motion.div>
-                                ))}
-                            </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {[
+                                            "Electrical Safety",
+                                            "Fire Safety",
+                                            "Building Safety",
+                                            "Sustainable Development",
+                                            "Automation",
+                                            "Construction Solutions",
+                                        ].map((item, index) => (
+                                            <motion.div
+                                                key={item}
+                                                initial={{ opacity: 0, x: -20 }}
+                                                whileInView={{ opacity: 1, x: 0 }}
+                                                viewport={{ once: true }}
+                                                transition={{ duration: 0.3, delay: index * 0.05 }}
+                                                className="flex items-center gap-2"
+                                            >
+                                                <span className="w-2 h-2 rounded-full bg-primary-500" />
+                                                <span className="text-sm">{item}</span>
+                                            </motion.div>
+                                        ))}
+                                    </div>
 
-                            <p>
-                                With strong expertise, we deliver landmark projects on time and within budget, specializing in energy-saving, safety assessments, and equipment supply.
-                            </p>
+                                    <p>
+                                        With strong expertise, we deliver landmark projects on time and within budget, specializing in energy-saving, safety assessments, and equipment supply.
+                                    </p>
+                                </>
+                            )}
                         </div>
                     </AnimatedSection>
 
@@ -87,7 +124,7 @@ export function About() {
                                         <h3 className="text-xl font-bold text-primary-800">OUR MISSION</h3>
                                     </div>
                                     <p className="text-primary-700 leading-relaxed text-sm">
-                                        To be a leading provider of strategies delivering long-term commercial benefits with economical, efficient, and flexible solutions.
+                                        {aboutData?.about?.mission || "To be a leading provider of strategies delivering long-term commercial benefits with economical, efficient, and flexible solutions."}
                                     </p>
                                 </div>
                             </GradientCard>
@@ -106,7 +143,7 @@ export function About() {
                                         <h3 className="text-xl font-bold text-secondary-800">OUR VISION</h3>
                                     </div>
                                     <p className="text-primary-700 leading-relaxed text-sm">
-                                        To continually improve, contributing to environmental and social progress, establishing Honesty Engineering as a sustainable organization.
+                                        {aboutData?.about?.vision || "To continually improve, contributing to environmental and social progress, establishing Honesty Engineering as a sustainable organization."}
                                     </p>
                                 </div>
                             </GradientCard>

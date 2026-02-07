@@ -49,6 +49,32 @@
             color: white;
         }
         
+        /* Drag and Drop Styles */
+        .service-item {
+            transition: all 0.2s ease;
+        }
+        
+        .service-item:hover {
+            transform: translateY(-2px);
+        }
+        
+        .service-item.dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+        }
+        
+        .drag-handle {
+            cursor: grab;
+        }
+        
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+        
+        .service-item[draggable="true"]:hover {
+            box-shadow: 0 4px 12px rgba(139, 195, 74, 0.2);
+        }
+        
         .nav-link span {
             color: white;
         }
